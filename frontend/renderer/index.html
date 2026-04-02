@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: http://localhost:3000; media-src 'self' blob:; connect-src 'self' http://localhost:3000;">
+  <title>MDS – Medical Dental System</title>
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Login Screen (shown first) -->
+<div id="login-screen"></div>
+
+<!-- App Shell (hidden until logged in) -->
+<div id="app" style="display:none">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon"><i class="fas fa-tooth"></i></div>
+      <div class="sidebar-logo-text">
+        <h1>MDS</h1>
+        <span>Dental System</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <div class="nav-item active" data-page="dashboard" id="nav-dashboard" tabindex="0">
+        <span class="nav-icon"><i class="fas fa-chart-pie"></i></span>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item" data-page="patients" id="nav-patients" tabindex="0">
+        <span class="nav-icon"><i class="fas fa-user-injured"></i></span>
+        <span>Patients</span>
+      </div>
+      <div class="nav-item" data-page="appointments" id="nav-appointments" tabindex="0">
+        <span class="nav-icon"><i class="fas fa-calendar-alt"></i></span>
+        <span>Appointments</span>
+      </div>
+
+      <div class="nav-section-label" style="margin-top:8px">Clinical</div>
+      <div class="nav-item" data-page="records" id="nav-records" tabindex="0">
+        <span class="nav-icon"><i class="fas fa-file-prescription"></i></span>
+        <span>Medical Records</span>
+      </div>
+      <div class="nav-item" data-page="treatments" id="nav-treatments" tabindex="0">
+        <span class="nav-icon"><i class="fas fa-tooth"></i></span>
+        <span>Treatments</span>
+      </div>
+
+      <div class="nav-section-label" style="margin-top:8px">Finance & Supply</div>
+      <div class="nav-item" data-page="finance" id="nav-finance" tabindex="0">
+        <span class="nav-icon"><i class="fas fa-wallet"></i></span>
+        <span>Finance</span>
+      </div>
+      <div class="nav-item" data-page="inventory" id="nav-inventory" tabindex="0">
+        <span class="nav-icon"><i class="fas fa-boxes"></i></span>
+        <span>Inventory</span>
+      </div>
+      <div class="nav-item" data-page="reports" id="nav-reports" tabindex="0">
+        <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+        <span>Reports</span>
+      </div>
+
+      <div class="nav-section-label" style="margin-top:8px">System</div>
+      <div class="nav-item" data-page="notifications" id="nav-notifications" tabindex="0">
+        <span class="nav-icon"><i class="fas fa-bell"></i></span>
+        <span>Notifications</span>
+        <span class="nav-badge" id="notif-badge" style="display:none">0</span>
+      </div>
+      <div class="nav-item" id="nav-logs" data-page="logs">
+        <span class="nav-icon"><i class="fas fa-fingerprint"></i></span>
+        <span>Audit Logs</span>
+      </div>
+      <div class="nav-item" id="nav-system" data-page="system">
+        <span class="nav-icon"><i class="fas fa-microchip"></i></span>
+        <span>System Info</span>
+      </div>
+      <div class="nav-item" id="nav-settings" data-page="settings">
+        <span class="nav-icon"><i class="fas fa-sliders-h"></i></span>
+        <span>Settings</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="avatar sidebar-user-avatar" id="sidebar-avatar">?</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name" id="sidebar-user-name">Loading…</div>
+        <div class="sidebar-user-role" id="sidebar-user-role"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <!-- Topbar -->
+      <header class="topbar">
+      <button class="topbar-icon-btn" id="sidebar-toggle" title="Toggle sidebar" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+      <div class="topbar-breadcrumb">
+        <span>MDS</span>
+        <span>&rsaquo;</span>
+        <span class="current" id="topbar-page">Dashboard</span>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="topbar-search" id="global-search-bar">
+        <span><i class="fas fa-search"></i></span>
+        <input type="text" placeholder="Search patients, appointments…" id="global-search-input" aria-label="Global search">
+        <span class="search-hint">Ctrl+K</span>
+      </div>
+      <div class="topbar-icon-btn" id="notif-btn" title="Notifications" tabindex="0">
+        <i class="fas fa-bell"></i>
+        <span class="badge" id="topbar-notif-badge" style="display:none"></span>
+      </div>
+      <div class="topbar-icon-btn" id="logout-btn" title="Logout" tabindex="0"><i class="fas fa-power-off"></i></div>
+    </header>
+
+    <!-- Page Content -->
+    <main id="main-content"></main>
+  </div>
+</div>
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

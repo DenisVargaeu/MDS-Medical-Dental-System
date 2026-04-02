@@ -1,0 +1,16 @@
+{
+  "name": "mds-frontend",
+  "version": "1.0.0",
+  "description": "MDS - Medical Dental System Desktop App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --inspect"
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0"
+  }
+}
