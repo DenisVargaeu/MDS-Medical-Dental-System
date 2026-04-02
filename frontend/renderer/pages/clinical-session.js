@@ -206,7 +206,10 @@ export async function renderClinicalSession(container, { patientId, appointmentI
 
           // 2. Add treatments to record
           for (const t of sessionTreatments) {
-            await api.records.addTreatment(record.id, { treatment_id: t.id });
+            await api.records.addTreatment(record.id, { 
+              treatment_id: t.id,
+              unit_price: t.price
+            });
           }
 
           // 3. Create invoice

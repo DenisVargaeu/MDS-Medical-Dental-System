@@ -3,7 +3,18 @@
  * Communicates with the backend REST API
  */
 
-const API_BASE = 'http://localhost:3000/api';
+let API_BASE = (localStorage.getItem('mds_server_url') ? `${localStorage.getItem('mds_server_url')}/api` : null) || 'http://localhost:3000/api';
+
+export function setServerUrl(url) {
+  // Ensure url doesn't end with /
+  const cleanUrl = url.replace(/\/$/, '');
+  API_BASE = `${cleanUrl}/api`;
+  localStorage.setItem('mds_server_url', cleanUrl);
+}
+
+export function getServerUrl() {
+  return localStorage.getItem('mds_server_url') || 'http://localhost:3000';
+}
 
 let _authToken = null;
 

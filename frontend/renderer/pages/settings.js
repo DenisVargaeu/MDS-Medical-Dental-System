@@ -87,7 +87,7 @@ export async function renderSettings(container) {
             <table style="max-width:400px">
               <tbody>
                 <tr><td style="color:var(--text-muted);padding:8px 0">Application</td><td style="font-weight:600">MDS - Medical Dental System</td></tr>
-                <tr><td style="color:var(--text-muted);padding:8px 0">Version</td><td>v1.0.0</td></tr>
+                <tr><td style="color:var(--text-muted);padding:8px 0">Version</td><td>v1.1.0-beta</td></tr>
                 <tr><td style="color:var(--text-muted);padding:8px 0">API Endpoint</td><td style="font-family:monospace;font-size:12px">http://localhost:3000/api</td></tr>
                 <tr><td style="color:var(--text-muted);padding:8px 0">Logged in as</td><td>${user.name} ${user.surname} (${user.role})</td></tr>
               </tbody>

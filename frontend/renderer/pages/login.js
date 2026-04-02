@@ -41,7 +41,7 @@ export function renderLogin(container, onSuccess) {
       </form>
 
       <p style="color:rgba(255,255,255,0.2);font-size:11px;margin-top:32px;text-align:center">
-        MDS v1.0 — Secure dental clinic management
+        MDS v1.1.0-beta — Secure dental clinic management
       </p>
     </div>
 

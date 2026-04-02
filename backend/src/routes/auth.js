@@ -90,4 +90,21 @@ router.post('/change-password', auth, async (req, res) => {
   }
 });
 
+// POST /api/auth/verify-pairing
+const { verifyPairingCode } = require('../utils/pairing');
+router.post('/verify-pairing', async (req, res) => {
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: 'Pairing code is required' });
+  try {
+    const isValid = await verifyPairingCode(code);
+    if (isValid) {
+      res.json({ success: true, message: 'Pairing successful' });
+    } else {
+      res.status(401).json({ error: 'Invalid or expired pairing code' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

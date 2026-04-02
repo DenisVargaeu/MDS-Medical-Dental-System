@@ -1,6 +1,6 @@
 -- ============================================================
 -- MDS - Medical Dental System
--- Database Schema v1.0
+-- Database Schema v1.1.0-beta
 -- All tables use the mds_ prefix
 -- ============================================================
 
@@ -321,5 +321,14 @@ CREATE TABLE IF NOT EXISTS mds_odontogram (
   notes TEXT,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE,
-  UNIQUE KEY unique_tooth (patient_id, tooth_number)
+-- ============================================================
+-- PAIRING (Client Device Connection)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS mds_pairing (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  pairing_code VARCHAR(10) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
+
+SET foreign_key_checks = 1;

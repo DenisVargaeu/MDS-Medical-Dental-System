@@ -19,6 +19,7 @@ import { renderLogs } from '../../pages/logs.js';
 import { renderReports } from '../../pages/reports.js';
 import { renderClinicalSession } from '../../pages/clinical-session.js';
 import { renderSystem } from '../../pages/system.js';
+import { renderPairing } from '../../pages/pairing.js';
 
 // ── State ─────────────────────────────────────────────────────────
 let currentPage = 'dashboard';
@@ -132,6 +133,13 @@ async function refreshNotifBadge() {
 
 // ── Boot ──────────────────────────────────────────────────────────
 async function boot() {
+  // Check if device is paired
+  const isPaired = localStorage.getItem('mds_is_paired') === 'true';
+  if (!isPaired) {
+    showPairing();
+    return;
+  }
+
   const token = api.getToken();
   const savedUser = sessionStorage.getItem('mds_user');
 
@@ -144,6 +152,16 @@ async function boot() {
   }
 
   showLogin();
+}
+
+function showPairing() {
+  document.getElementById('pairing-screen').style.display = '';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+  renderPairing(document.getElementById('pairing-screen'), () => {
+    document.getElementById('pairing-screen').style.display = 'none';
+    showLogin();
+  });
 }
 
 function showLogin() {
