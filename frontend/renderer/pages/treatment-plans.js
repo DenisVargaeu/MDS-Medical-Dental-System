@@ -32,28 +32,38 @@ export async function renderTreatmentPlans(container, params = {}) {
                 <tr>
                   <th>Title</th>
                   <th>Patient</th>
+                  <th>Progress</th>
                   <th>Doctor</th>
                   <th>Estimated cost</th>
-                  <th>Items</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                ${plans.map(p => `
+                ${plans.map(p => {
+                  const completed = p.items.filter(i => i.status === 'completed' || i.status === 'skipped').length;
+                  const progress = p.items.length > 0 ? Math.round((completed / p.items.length) * 100) : 0;
+                  return `
                   <tr>
                     <td><strong>${p.title}</strong></td>
-                    <td><a href="#" onclick="mdsNavigateTo('patient-detail', {id: ${p.patient_id}})">${p.patient_first_name} ${p.patient_last_name}</a></td>
+                    <td><a href="#" onclick="mdsNavigateTo('records', {patientId: ${p.patient_id}})">${p.patient_first_name} ${p.patient_last_name}</a></td>
+                    <td style="width:120px">
+                       <div class="flex items-center gap-8">
+                          <div class="tp-progress-track" style="height:6px; flex:1">
+                             <div class="tp-progress-fill" style="width:${progress}%"></div>
+                          </div>
+                          <span style="font-size:10px; font-weight:700">${progress}%</span>
+                       </div>
+                    </td>
                     <td>Dr. ${p.doctor_name} ${p.doctor_surname}</td>
                     <td>€${parseFloat(p.total_estimated_cost).toFixed(2)}</td>
-                    <td>${p.items.length} treatments</td>
                     <td><span class="badge badge-${p.status === 'active' ? 'primary' : p.status === 'completed' ? 'success' : 'muted'}">${p.status}</span></td>
                     <td>
                       <button class="btn btn-sm btn-ghost" onclick="viewPlan(${p.id})"><i class="fas fa-eye"></i></button>
-                      ${isDoctor ? `<button class="btn btn-sm btn-ghost" onclick="managePlan(${p.id}, ${p.patient_id})"><i class="fas fa-edit"></i></button>` : ''}
+                      ${isDoctor ? `<button class="btn btn-sm btn-ghost" onclick="managePlan(${p.id})"><i class="fas fa-edit"></i></button>` : ''}
                     </td>
                   </tr>
-                `).join('')}
+                `;}).join('')}
               </tbody>
             </table>
           `}
@@ -253,10 +263,20 @@ export async function renderTreatmentPlans(container, params = {}) {
                 
                 <div style="flex:1"></div>
                 
-                <div class="alert alert-info" style="margin-top:24px">
-                  <i class="fas fa-info-circle alert-icon"></i>
-                  <div>Statuses update real-time revenue projections.</div>
-                </div>
+                ${plan.status === 'draft' ? `
+                  <div class="alert alert-warning" style="margin-top:24px; border-style:dashed; border-width:2px">
+                    <i class="fas fa-edit alert-icon"></i>
+                    <div>
+                      <strong>Draft Mode</strong><br>
+                      Activate this plan to begin tracking procedures and creating invoices.
+                    </div>
+                  </div>
+                ` : `
+                  <div class="alert alert-info" style="margin-top:24px">
+                    <i class="fas fa-info-circle alert-icon"></i>
+                    <div>Statuses update real-time revenue projections.</div>
+                  </div>
+                `}
               </div>
 
               <!-- Right: Detailed Phases -->

@@ -32,23 +32,54 @@ export async function renderSettings(container) {
           </div>
           <div class="table-wrapper">
             <table>
-              <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Last Login</th><th>Status</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Professional</th><th>Contact</th><th>Role & Permissions</th><th>Last Registry</th><th>Activity</th><th>Actions</th></tr></thead>
               <tbody>
-                ${users.length === 0 ? `<tr><td colspan="6"><div class="empty-state" style="padding:30px">No users</div></td></tr>` :
-                users.map(u => `<tr>
+                ${users.length === 0 ? `<tr><td colspan="6"><div class="empty-state" style="padding:40px">No staff members found</div></td></tr>` :
+                users.map(u => `<tr class="user-row">
                   <td>
-                    <div style="display:flex;align-items:center;gap:8px">
+                    <div class="user-info-main">
                       <div class="avatar avatar-sm">${u.name[0]}${u.surname[0]}</div>
-                      <span style="font-weight:600">${u.name} ${u.surname}</span>
+                      <div class="user-info-text">
+                        <span class="user-info-name">${u.name} ${u.surname}</span>
+                        <span class="badge badge-muted badge-pill" style="font-size:9px; margin-top:2px">ID: #USR-${u.id}</span>
+                      </div>
                     </div>
                   </td>
-                  <td style="color:var(--text-secondary)">${u.email}</td>
-                  <td><span class="badge ${u.role==='admin'?'badge-danger':u.role==='doctor'?'badge-primary':'badge-info'}">${u.role}</span></td>
-                  <td style="font-size:12px;color:var(--text-muted)">${u.last_login ? new Date(u.last_login).toLocaleDateString('sk-SK') : 'Never'}</td>
-                  <td><span class="badge ${u.active?'badge-success':'badge-muted'}">${u.active?'Active':'Inactive'}</span></td>
                   <td>
-                    <button class="btn btn-sm btn-secondary toggle-user" data-id="${u.id}" data-active="${u.active}">${u.active?'<i class="fas fa-user-minus"></i> Deactivate':'<i class="fas fa-user-check"></i> Activate'}</button>
-                    <button class="btn btn-sm btn-ghost reset-pw" data-id="${u.id}"><i class="fas fa-key"></i> Reset PW</button>
+                    <div class="user-info-text">
+                      <span style="font-size:13px; font-weight:500">${u.email}</span>
+                      <span style="font-size:11px; color:var(--text-muted)">${u.phone || 'No phone'}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="display:flex; flex-direction:column; gap:4px">
+                      <span class="badge ${u.role==='admin'?'badge-danger':u.role==='doctor'?'badge-primary':'badge-info'}">
+                        ${u.role==='admin'?'<i class="fas fa-user-shield"></i>':u.role==='doctor'?'<i class="fas fa-stethoscope"></i>':'<i class="fas fa-user-edit"></i>'}
+                        ${u.role.toUpperCase()}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="user-info-text">
+                      <span style="font-size:12px; font-weight:600">${u.last_login ? new Date(u.last_login).toLocaleDateString('sk-SK') : '---'}</span>
+                      <span style="font-size:10px; color:var(--text-muted)">${u.last_login ? new Date(u.last_login).toLocaleTimeString('sk-SK', {hour:'2-digit',minute:'2-digit'}) : 'NEW ACCOUNT'}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="display:flex; align-items:center">
+                      <span class="status-indicator" style="background:${u.active ? 'var(--success)' : 'var(--text-muted)'}; animation:${u.active ? 'pulseGreen 2s infinite' : 'none'}"></span>
+                      <span style="font-size:12px; font-weight:600; color:${u.active ? 'var(--success)' : 'var(--text-muted)'}">${u.active ? 'Active' : 'Offline'}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="flex gap-4">
+                      <button class="btn btn-sm btn-secondary toggle-user" data-id="${u.id}" data-active="${u.active}" title="${u.active?'Deactivate':'Activate'}">
+                        <i class="fas ${u.active?'fa-user-minus':'fa-user-check'}"></i>
+                      </button>
+                      <button class="btn btn-sm btn-ghost reset-pw" data-id="${u.id}" title="Reset Password">
+                        <i class="fas fa-key"></i>
+                      </button>
+                    </div>
                   </td>
                 </tr>`).join('')}
               </tbody>
@@ -87,7 +118,7 @@ export async function renderSettings(container) {
             <table style="max-width:400px">
               <tbody>
                 <tr><td style="color:var(--text-muted);padding:8px 0">Application</td><td style="font-weight:600">MDS - Medical Dental System</td></tr>
-                <tr><td style="color:var(--text-muted);padding:8px 0">Version</td><td>v1.4.0</td></tr>
+                <tr><td style="color:var(--text-muted);padding:8px 0">Version</td><td>v2.0.0</td></tr>
                 <tr><td style="color:var(--text-muted);padding:8px 0">API Endpoint</td><td style="font-family:monospace;font-size:12px">http://localhost:3000/api</td></tr>
                 <tr><td style="color:var(--text-muted);padding:8px 0">Logged in as</td><td>${user.name} ${user.surname} (${user.role})</td></tr>
               </tbody>
@@ -264,7 +295,7 @@ export async function renderSettings(container) {
       canvas.innerHTML = '';
       template.forEach((block, index) => {
         const div = document.createElement('div');
-        div.className = 'card';
+        div.className = 'card card-premium';
         div.draggable = true;
         div.style.padding = '12px 16px';
         div.style.cursor = 'grab';
@@ -348,4 +379,11 @@ export async function renderSettings(container) {
 
     loadClinicInfo();
   }
+
+  // Disconnect from server
+  document.getElementById('disconnect-btn')?.addEventListener('click', () => {
+    if (confirm('CAUTION: This will disconnect your device from the server. You will need the pairing PIN to reconnect. Continue?')) {
+      window.mdsDisconnect();
+    }
+  });
 }

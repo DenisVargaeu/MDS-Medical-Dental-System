@@ -5,11 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: *; media-src 'self' blob:; connect-src 'self' *;">
-  <title>MDS – Medical Dental System</title>
+  <title>MDS - Medical Dental System</title>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      const errDiv = document.getElementById('critical-error');
+      if (errDiv) {
+        errDiv.style.display = 'flex';
+        errDiv.innerHTML = `
+          <div style="background:white; padding:30px; border-radius:20px; box-shadow:0 20px 50px rgba(0,0,0,0.3); max-width:500px; text-align:center">
+            <i class="fas fa-exclamation-triangle" style="font-size:48px; color:#ef4444; margin-bottom:20px"></i>
+            <h2 style="color:#1e293b; margin-bottom:10px">Startup Error</h2>
+            <p style="color:#64748b; font-size:14px; margin-bottom:20px">${msg}</p>
+            <div style="font-family:monospace; font-size:11px; background:#f1f5f9; padding:10px; border-radius:8px; text-align:left; overflow:auto; max-height:150px">
+              File: ${url}<br>Line: ${line}:${col}<br><br>${error?.stack || ''}
+            </div>
+            <button onclick="location.reload()" style="margin-top:20px; padding:10px 20px; background:#1e40af; color:white; border:none; border-radius:8px; cursor:pointer">Retry</button>
+          </div>
+        `;
+      }
+      return false;
+    };
+  </script>
   <link rel="stylesheet" href="assets/css/global.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="animate-fade-in">
+<!-- Critical Error Overlay (Hidden by default) -->
+<div id="critical-error" style="position:fixed; inset:0; background:rgba(15,23,42,0.8); z-index:10000; display:none; align-items:center; justify-content:center; padding:20px"></div>
+
 <!-- Toast container -->
 <div id="toast-container"></div>
 
@@ -55,14 +78,6 @@
         <span class="nav-icon"><i class="fas fa-project-diagram"></i></span>
         <span>Treatment Plans</span>
       </div>
-      <div class="nav-item" data-page="lab-work" id="nav-lab-work" tabindex="0">
-        <span class="nav-icon"><i class="fas fa-flask"></i></span>
-        <span>Laboratory Work</span>
-      </div>
-      <div class="nav-item" data-page="prescriptions" id="nav-prescriptions" tabindex="0">
-        <span class="nav-icon"><i class="fas fa-prescription-bottle-alt"></i></span>
-        <span>Prescriptions</span>
-      </div>
       <div class="nav-item" data-page="treatments" id="nav-treatments" tabindex="0">
         <span class="nav-icon"><i class="fas fa-tooth"></i></span>
         <span>Service Catalog</span>
@@ -81,27 +96,11 @@
         <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
         <span>Reports</span>
       </div>
-      <div class="nav-item" data-page="recall" id="nav-recall" tabindex="0">
-        <span class="nav-icon"><i class="fas fa-bullhorn"></i></span>
-        <span>Recall Manager</span>
-      </div>
 
       <div class="nav-section-label" style="margin-top:8px">Clinic Management</div>
       <div class="nav-item" data-page="staff" id="nav-staff" tabindex="0">
         <span class="nav-icon"><i class="fas fa-users-cog"></i></span>
         <span>Staff Management</span>
-      </div>
-      <div class="nav-item" data-page="documents" id="nav-documents" tabindex="0">
-        <span class="nav-icon"><i class="fas fa-images"></i></span>
-        <span>Document Gallery</span>
-      </div>
-      <div class="nav-item" data-page="sterilization" id="nav-sterilization" tabindex="0">
-        <span class="nav-icon"><i class="fas fa-pump-medical"></i></span>
-        <span>Hygiene & Sterilization</span>
-      </div>
-      <div class="nav-item" data-page="suppliers" id="nav-suppliers" tabindex="0">
-        <span class="nav-icon"><i class="fas fa-truck-loading"></i></span>
-        <span>Suppliers</span>
       </div>
 
       <div class="nav-section-label" style="margin-top:8px">System</div>
@@ -143,17 +142,30 @@
         <span>&rsaquo;</span>
         <span class="current" id="topbar-page">Dashboard</span>
       </div>
-      <div class="topbar-spacer"></div>
-      <div class="topbar-search" id="global-search-bar">
-        <span><i class="fas fa-search"></i></span>
-        <input type="text" placeholder="Search patients, appointments…" id="global-search-input" aria-label="Global search">
-        <span class="search-hint">Ctrl+K</span>
+      
+      <div class="topbar-actions">
+        <div class="topbar-search" id="global-search-bar">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search patients, records…" id="global-search-input">
+          <span class="search-hint">Ctrl+K</span>
+        </div>
+        
+        <div class="topbar-divider"></div>
+
+        <div class="topbar-icon-btn" id="notif-btn" title="Notifications" tabindex="0">
+          <i class="fas fa-bell"></i>
+          <span class="badge" id="topbar-notif-badge" style="display:none"></span>
+        </div>
+
+        <div class="topbar-user-pill" id="topbar-profile-trigger">
+          <div class="avatar avatar-xs" id="topbar-avatar">?</div>
+          <div class="user-pill-info">
+            <span id="topbar-user-name">Loading...</span>
+            <small id="topbar-user-role">Doctor</small>
+          </div>
+          <div class="topbar-icon-btn logout-min-btn" id="logout-btn" title="Logout"><i class="fas fa-power-off"></i></div>
+        </div>
       </div>
-      <div class="topbar-icon-btn" id="notif-btn" title="Notifications" tabindex="0">
-        <i class="fas fa-bell"></i>
-        <span class="badge" id="topbar-notif-badge" style="display:none"></span>
-      </div>
-      <div class="topbar-icon-btn" id="logout-btn" title="Logout" tabindex="0"><i class="fas fa-power-off"></i></div>
     </header>
 
     <!-- Page Content -->

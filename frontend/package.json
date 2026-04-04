@@ -1,6 +1,6 @@
 {
   "name": "mds-frontend",
-  "version": "1.6.0",
+  "version": "2.0.0",
   "description": "MDS - Medical Dental System Desktop App",
   "main": "main.js",
   "scripts": {

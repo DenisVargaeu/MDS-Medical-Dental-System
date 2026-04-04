@@ -1,64 +1,72 @@
-# MDS — Medical Dental System [v1.1.0-beta]
+# MDS - Medical Dental System v2.0.0 "Visionary Release"
+> **High-Integrity Clinical Suite for Precision Healthcare**
 
-MDS is a professional-grade, high-performance management platform for modern dental clinics. Built with a focus on UI/UX excellence, clinic efficiency, and clinical accuracy.
+Medical Dental System (MDS) is a premium, high-integrity electronic health record (EHR) and clinical management system built for state-of-the-art dental practices. MDS is a professional, high-performance Desktop application (Electron) with a robust Node.js backend. Specifically engineered for clinical excellence, version 2.0.0 "Visionary Release" streamlines the application by removing administrative overhead and focusing on deep clinical data integrity.
 
-![MDS Dashboard Placeholder](https://via.placeholder.com/1200x600/0A1628/ffffff?text=MDS+v1.1.0+-+Modern+Dental+System)
-
-## 🚀 Key Features
-
-- **Advanced Appointment Calendar**: Professional weekly CSS Grid calendar with 8:00–20:00 time-slot management and status tracking.
-- **Bento-style Dashboard**: High-end data visualization, revenue sparklines, and personalized clinician greetings.
-- **Odontogram (Dental Chart)**: Interactive dental chart with visual status indicators, clinical notes, and pulse animations for critical conditions.
-- **Financial Analytics**: Real-time revenue mix tracking and patient demographic reports with SVG data visualization.
-- **Patient Management**: Comprehensive medical profiles, priority alerts, and treatment history tracking.
-- **Secure Architecture**: JWT-based authentication and secure role-based access control.
-
-## 🛠️ Tech Stack
-
-- **Frontend**: Vanilla JavaScript (ES6+), CSS3 (Bento Design/Grid), HTML5.
-- **Backend**: Node.js, Express, MySQL.
-- **Desktop**: Electron (Native Experience).
-
-## 📦 Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/DenisVargaeu/MDS-Medical-Dental-System.git
-   ```
-2. **Setup Backend**:
-   - Navigate to `/backend`
-   - Run `npm install`
-   - Configure `.env` (Database credentials)
-   - Run `npm run dev`
-3. **Setup Frontend**:
-   - Navigate to `/frontend`
-   - Run `npm install` (if applicable for Electron/Dependencies)
-   - Launch via Electron or development server.
-
-## 📈 Recent Updates (v1.1.0-beta)
-- **PIVOT**: Replaced experimental Prescription/Lab modules with a robust weekly appointment calendar.
-- **UI REFINEMENT**: Implemented a "premium" bento-grid layout for the dashboard.
-- **POLISH**: Added micro-animations and improved visual feedback for the dental chart.
-- **ANALYTICS**: Added SVG-based reports for clinic performance.
-
-## 📁 Project Structure
-```text
-MDS/
-├── backend/            # Express.js REST API
-│   ├── src/
-│   │   ├── config/     # Database & App config
-│   │   ├── routes/     # API Endpoints
-│   │   └── utils/      # Helpers (Pairing, Auth)
-│   └── schema.sql      # Database initialization
-├── frontend/           # Electron Application
-│   ├── main.js         # Electron Main process
-│   ├── preload.js      # IPC Bridge
-│   └── renderer/       # UI Logic & Assets
-└── start.sh            # Unified startup script
-```
-
-## 📄 License
-Commercial - All rights reserved.
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+![Version](https://img.shields.io/badge/Version-2.0.0--Visionary--Release-blueviolet.svg)
+![Status](https://img.shields.io/badge/Status-Production--Ready-success.svg)
 
 ---
-*Developed for NEXT-GEN Dental Clinic Management.*
+
+## 🚀 Key Clinical Modules
+
+### 🏥 Advanced Practice Management
+- **Intelligent Dashboard**: Real-time clinic stats, today's schedule, and revenue trends.
+- **Unified Patient Directory**: Comprehensive EMR (Electronic Medical Records) with full clinical history.
+- **Smart Scheduling**: Conflict-aware appointment engine with status tracking.
+
+### 🧬 Specialist Clinical Tools
+- **Patient Vitals Tracker (New)**: High-resolution tracking for Blood Pressure, Pulse, BMI, and Oxygen Saturation (SpO2) with historical analytics.
+- **Phased Treatment Planning**: Multi-stage dental plans with automated cost calculations and visual completion progress tracking.
+- **Odontogram (Dental Chart)**: Visual charting with history of tooth-specific procedures.
+
+### 📈 Business & Compliance Operations
+- **Finance & Automated Invoicing**: One-click professional PDF-grade invoices with custom clinic branding.
+- **Inventory & Supply Chain**: Stock tracking with minimal-level alerts.
+- **Integrated Audit Logs**: Transparent tracking of all clinical and administrative changes.
+
+---
+
+## 🎨 Premium UI/UX (Glassmorphism 2.0)
+The application features a cutting-edge **Glassmorphism 2.0** design system:
+- **High Performance**: Optimized blur effects and hardware acceleration for smooth interaction on medical workstations.
+- **Vibrant Aesthetics**: Sophisticated HSL color tokens for high-integrity medical visuals.
+- **Micro-Animations**: Smooth, hardware-accelerated transitions and entry animations.
+
+---
+
+## 🛠️ Technical Stack
+- **Frontend**: Electron, Vanilla JavaScript, CSS3 (Custom Design System).
+- **Backend**: Node.js, Express, MySQL (Relational Persistence).
+- **Communication**: REST API with JWT-based Auth and Role-Based Access Control (RBAC).
+
+---
+
+## 📦 Installation & Setup
+
+### 1. Database Configuration
+1. Install MySQL 8.0+.
+2. Create a database: `CREATE DATABASE mds_db;`.
+3. Import the schema: `mysql -u root -p mds_db < backend/schema.sql`.
+
+### 2. Backend Setup
+```bash
+cd backend
+npm install
+npm start
+```
+
+### 3. Desktop Application Setup
+```bash
+cd frontend
+npm install
+npm start
+```
+
+---
+
+## 💎 Project Evolution
+MDS version 1.7.0 "Core Precision" represents a strategic refactoring of the platform. By stripping away non-essential administrative modules (Laboratory Work, Recall Manager, Sterilization Logs), we have delivered a significantly faster and more stable clinical core.
+
+Developed with ❤️ for the medical community.

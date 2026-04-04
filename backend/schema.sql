@@ -1,6 +1,6 @@
 -- ============================================================
 -- MDS - Medical Dental System
--- Database Schema v1.1.0-beta
+-- Database Schema v2.0.0 (Core Precision)
 -- All tables use the mds_ prefix
 -- ============================================================
 
@@ -12,7 +12,7 @@ CREATE DATABASE IF NOT EXISTS mds_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unico
 USE mds_db;
 
 -- ============================================================
--- USERS & AUTHENTICATION
+-- 1. USERS & AUTHENTICATION
 -- ============================================================
 CREATE TABLE IF NOT EXISTS mds_users (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -29,13 +29,11 @@ CREATE TABLE IF NOT EXISTS mds_users (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Default admin user: admin@mds.com / Admin@123
 INSERT IGNORE INTO mds_users (name, surname, email, password_hash, role)
-VALUES ('System', 'Admin', 'admin@mds.com',
-  'e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7', 'admin');
+VALUES ('System', 'Admin', 'admin@mds.com', 'e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7', 'admin');
 
 -- ============================================================
--- PATIENTS
+-- 2. PATIENTS
 -- ============================================================
 CREATE TABLE IF NOT EXISTS mds_patients (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -65,7 +63,28 @@ CREATE TABLE IF NOT EXISTS mds_patients (
 ) ENGINE=InnoDB;
 
 -- ============================================================
--- ALLERGIES
+-- 3. PATIENT VITALS (New v1.7.0)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS mds_patient_vitals (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  patient_id INT NOT NULL,
+  doctor_id INT NOT NULL,
+  recorded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  blood_pressure VARCHAR(20), -- e.g. 120/80
+  pulse INT, -- bpm
+  temperature DECIMAL(4,1), -- Celsius
+  respiratory_rate INT,
+  weight_kg DECIMAL(5,2),
+  height_cm INT,
+  bmi DECIMAL(4,1),
+  oxygen_saturation INT, -- SpO2 %
+  notes TEXT,
+  FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE,
+  FOREIGN KEY (doctor_id) REFERENCES mds_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- 4. CLINICAL CONTEXT
 -- ============================================================
 CREATE TABLE IF NOT EXISTS mds_allergies (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -78,9 +97,6 @@ CREATE TABLE IF NOT EXISTS mds_allergies (
   FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ============================================================
--- MEDICATIONS
--- ============================================================
 CREATE TABLE IF NOT EXISTS mds_medications (
   id INT AUTO_INCREMENT PRIMARY KEY,
   patient_id INT NOT NULL,
@@ -96,9 +112,6 @@ CREATE TABLE IF NOT EXISTS mds_medications (
   FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ============================================================
--- DIAGNOSES
--- ============================================================
 CREATE TABLE IF NOT EXISTS mds_diagnoses (
   id INT AUTO_INCREMENT PRIMARY KEY,
   patient_id INT NOT NULL,
@@ -114,7 +127,7 @@ CREATE TABLE IF NOT EXISTS mds_diagnoses (
 ) ENGINE=InnoDB;
 
 -- ============================================================
--- TREATMENTS CATALOG
+-- 5. TREATMENTS & APPOINTMENTS
 -- ============================================================
 CREATE TABLE IF NOT EXISTS mds_treatments (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -128,30 +141,17 @@ CREATE TABLE IF NOT EXISTS mds_treatments (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Seed common dental treatments
 INSERT IGNORE INTO mds_treatments (name, category, price, duration_minutes) VALUES
-  ('Examination & Consultation', 'General', 20.00, 30),
-  ('X-Ray (Periapical)', 'Diagnostics', 15.00, 15),
-  ('X-Ray (Panoramic)', 'Diagnostics', 40.00, 15),
-  ('Professional Teeth Cleaning', 'Preventive', 60.00, 45),
-  ('Fluoride Treatment', 'Preventive', 25.00, 20),
-  ('Composite Filling', 'Restorative', 80.00, 45),
-  ('Amalgam Filling', 'Restorative', 60.00, 45),
-  ('Root Canal Treatment', 'Endodontics', 300.00, 90),
-  ('Tooth Extraction (Simple)', 'Surgery', 80.00, 30),
-  ('Tooth Extraction (Surgical)', 'Surgery', 150.00, 60),
-  ('Crown (Porcelain)', 'Prosthodontics', 500.00, 90),
-  ('Crown (Metal)', 'Prosthodontics', 300.00, 90),
-  ('Bridge (per unit)', 'Prosthodontics', 450.00, 90),
-  ('Dental Implant', 'Implantology', 1200.00, 120),
-  ('Teeth Whitening', 'Aesthetic', 200.00, 60),
-  ('Orthodontic Consultation', 'Orthodontics', 50.00, 45),
-  ('Gum Treatment (Scaling)', 'Periodontics', 120.00, 60),
-  ('Emergency Treatment', 'Emergency', 50.00, 30);
+  ('Examination & Consultation', 'General', 20.00, 30), ('X-Ray (Periapical)', 'Diagnostics', 15.00, 15),
+  ('X-Ray (Panoramic)', 'Diagnostics', 40.00, 15), ('Professional Teeth Cleaning', 'Preventive', 60.00, 45),
+  ('Fluoride Treatment', 'Preventive', 25.00, 20), ('Composite Filling', 'Restorative', 80.00, 45),
+  ('Amalgam Filling', 'Restorative', 60.00, 45), ('Root Canal Treatment', 'Endodontics', 300.00, 90),
+  ('Tooth Extraction (Simple)', 'Surgery', 80.00, 30), ('Tooth Extraction (Surgical)', 'Surgery', 150.00, 60),
+  ('Crown (Porcelain)', 'Prosthodontics', 500.00, 90), ('Crown (Metal)', 'Prosthodontics', 300.00, 90),
+  ('Bridge (per unit)', 'Prosthodontics', 450.00, 90), ('Dental Implant', 'Implantology', 1200.00, 120),
+  ('Teeth Whitening', 'Aesthetic', 200.00, 60), ('Orthodontic Consultation', 'Orthodontics', 50.00, 45),
+  ('Gum Treatment (Scaling)', 'Periodontics', 120.00, 60), ('Emergency Treatment', 'Emergency', 50.00, 30);
 
--- ============================================================
--- APPOINTMENTS
--- ============================================================
 CREATE TABLE IF NOT EXISTS mds_appointments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   patient_id INT NOT NULL,
@@ -172,50 +172,7 @@ CREATE TABLE IF NOT EXISTS mds_appointments (
 ) ENGINE=InnoDB;
 
 -- ============================================================
--- MEDICAL RECORDS
--- ============================================================
-CREATE TABLE IF NOT EXISTS mds_medical_records (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  patient_id INT NOT NULL,
-  doctor_id INT NOT NULL,
-  appointment_id INT,
-  visit_date DATE NOT NULL,
-  chief_complaint TEXT,
-  clinical_findings TEXT,
-  treatment_performed TEXT,
-  doctor_notes TEXT,
-  follow_up_date DATE,
-  follow_up_notes TEXT,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE,
-  FOREIGN KEY (doctor_id) REFERENCES mds_users(id) ON DELETE CASCADE,
-  FOREIGN KEY (appointment_id) REFERENCES mds_appointments(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
-
--- ============================================================
--- PATIENT TREATMENTS (treatments done in a visit)
--- ============================================================
-CREATE TABLE IF NOT EXISTS mds_patient_treatments (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  record_id INT NOT NULL,
-  patient_id INT NOT NULL,
-  treatment_id INT NOT NULL,
-  tooth_number VARCHAR(10),
-  quantity INT NOT NULL DEFAULT 1,
-  unit_price DECIMAL(10,2) NOT NULL,
-  total_price DECIMAL(10,2) NOT NULL,
-  notes TEXT,
-  performed_by INT,
-  performed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (record_id) REFERENCES mds_medical_records(id) ON DELETE CASCADE,
-  FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE,
-  FOREIGN KEY (treatment_id) REFERENCES mds_treatments(id) ON DELETE RESTRICT,
-  FOREIGN KEY (performed_by) REFERENCES mds_users(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
-
--- ============================================================
--- INVOICES
+-- 6. FINANCE & RECORDS
 -- ============================================================
 CREATE TABLE IF NOT EXISTS mds_invoices (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -238,140 +195,50 @@ CREATE TABLE IF NOT EXISTS mds_invoices (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE,
-  FOREIGN KEY (record_id) REFERENCES mds_medical_records(id) ON DELETE SET NULL,
   FOREIGN KEY (created_by) REFERENCES mds_users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- ============================================================
--- FILES / ATTACHMENTS
--- ============================================================
-CREATE TABLE IF NOT EXISTS mds_files (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  patient_id INT NOT NULL,
-  record_id INT,
-  file_uuid VARCHAR(36) NOT NULL UNIQUE,
-  stored_name VARCHAR(255) NOT NULL,
-  original_name VARCHAR(255) NOT NULL,
-  mime_type VARCHAR(100),
-  size_bytes BIGINT,
-  category ENUM('xray','photo','document','lab_result','consent','other') DEFAULT 'other',
-  description TEXT,
-  uploaded_by INT,
-  uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE,
-  FOREIGN KEY (record_id) REFERENCES mds_medical_records(id) ON DELETE SET NULL,
-  FOREIGN KEY (uploaded_by) REFERENCES mds_users(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
-
--- ============================================================
--- NOTIFICATIONS
--- ============================================================
-CREATE TABLE IF NOT EXISTS mds_notifications (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT,
-  type ENUM('appointment','allergy','payment','system','reminder','warning') DEFAULT 'system',
-  title VARCHAR(255) NOT NULL,
-  message TEXT,
-  entity VARCHAR(50),
-  entity_id INT,
-  is_read TINYINT(1) DEFAULT 0,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES mds_users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- ============================================================
--- ACTIVITY LOGS
--- ============================================================
-CREATE TABLE IF NOT EXISTS mds_logs (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT,
-  action VARCHAR(100) NOT NULL,
-  entity VARCHAR(50),
-  entity_id INT,
-  details JSON,
-  ip_address VARCHAR(45),
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES mds_users(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
-
-SET foreign_key_checks = 1;
-
--- ============================================================
--- INVENTORY
--- ============================================================
-CREATE TABLE IF NOT EXISTS mds_inventory (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  unit VARCHAR(20) NOT NULL,
-  stock DECIMAL(10,2) DEFAULT 0,
-  min_stock DECIMAL(10,2) DEFAULT 0,
-  price DECIMAL(10,2) DEFAULT 0,
-  supplier VARCHAR(100),
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-
--- ============================================================
--- ODONTOGRAM (Dental Chart)
--- ============================================================
-CREATE TABLE IF NOT EXISTS mds_odontogram (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  patient_id INT NOT NULL,
-  tooth_number INT NOT NULL,
-  state ENUM('healthy', 'decayed', 'filled', 'missing', 'crown', 'bridge', 'implant', 'endodontic') DEFAULT 'healthy',
-  notes TEXT,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE,
--- ============================================================
--- PAIRING (Client Device Connection)
--- ============================================================
-CREATE TABLE IF NOT EXISTS mds_pairing (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  pairing_code VARCHAR(10) NOT NULL,
-  expires_at DATETIME NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-
--- ============================================================
--- PRESCRIPTIONS
--- ============================================================
-CREATE TABLE IF NOT EXISTS mds_prescriptions (
+CREATE TABLE IF NOT EXISTS mds_medical_records (
   id INT AUTO_INCREMENT PRIMARY KEY,
   patient_id INT NOT NULL,
   doctor_id INT NOT NULL,
-  date DATE NOT NULL,
-  medications TEXT NOT NULL, -- JSON or comma-separated list
-  instructions TEXT,
-  valid_until DATE,
-  status ENUM('active', 'expired', 'cancelled') DEFAULT 'active',
+  appointment_id INT,
+  visit_date DATE NOT NULL,
+  chief_complaint TEXT,
+  clinical_findings TEXT,
+  treatment_performed TEXT,
+  doctor_notes TEXT,
+  follow_up_date DATE,
+  follow_up_notes TEXT,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE,
-  FOREIGN KEY (doctor_id) REFERENCES mds_users(id) ON DELETE CASCADE
+  FOREIGN KEY (doctor_id) REFERENCES mds_users(id) ON DELETE CASCADE,
+  FOREIGN KEY (appointment_id) REFERENCES mds_appointments(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- ============================================================
--- LABORATORY WORK
--- ============================================================
-CREATE TABLE IF NOT EXISTS mds_lab_work (
+CREATE TABLE IF NOT EXISTS mds_patient_treatments (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  record_id INT NOT NULL,
   patient_id INT NOT NULL,
-  doctor_id INT NOT NULL,
-  lab_name VARCHAR(200) NOT NULL,
-  work_type VARCHAR(100) NOT NULL, -- e.g. Crown, Bridge, Denture
-  tooth_number VARCHAR(20),
-  shade VARCHAR(50),
-  order_date DATE NOT NULL,
-  due_date DATE,
-  received_date DATE,
-  cost DECIMAL(10,2) DEFAULT 0.00,
-  status ENUM('ordered', 'in_transit', 'received', 'fitted', 'failed', 'cancelled') DEFAULT 'ordered',
+  treatment_id INT NOT NULL,
+  tooth_number VARCHAR(10),
+  quantity INT NOT NULL DEFAULT 1,
+  unit_price DECIMAL(10,2) NOT NULL,
+  total_price DECIMAL(10,2) NOT NULL,
   notes TEXT,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  performed_by INT,
+  invoice_id INT NULL,
+  performed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (record_id) REFERENCES mds_medical_records(id) ON DELETE CASCADE,
   FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE,
-  FOREIGN KEY (doctor_id) REFERENCES mds_users(id) ON DELETE CASCADE
+  FOREIGN KEY (treatment_id) REFERENCES mds_treatments(id) ON DELETE RESTRICT,
+  FOREIGN KEY (performed_by) REFERENCES mds_users(id) ON DELETE SET NULL,
+  FOREIGN KEY (invoice_id) REFERENCES mds_invoices(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ============================================================
--- TREATMENT PLANS
+-- 7. TREATMENT PLANS
 -- ============================================================
 CREATE TABLE IF NOT EXISTS mds_treatment_plans (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -402,8 +269,19 @@ CREATE TABLE IF NOT EXISTS mds_treatment_plan_items (
 ) ENGINE=InnoDB;
 
 -- ============================================================
--- SYSTEM SETTINGS
+-- 8. OPERATIONS & SYSTEM
 -- ============================================================
+CREATE TABLE IF NOT EXISTS mds_inventory (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  unit VARCHAR(20) NOT NULL,
+  stock DECIMAL(10,2) DEFAULT 0,
+  min_stock DECIMAL(10,2) DEFAULT 0,
+  price DECIMAL(10,2) DEFAULT 0,
+  supplier VARCHAR(100),
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS mds_settings (
   setting_key VARCHAR(100) PRIMARY KEY,
   setting_value TEXT,
@@ -412,5 +290,22 @@ CREATE TABLE IF NOT EXISTS mds_settings (
 
 INSERT IGNORE INTO mds_settings (setting_key, setting_value) VALUES 
 ('invoice_template', '["header", "clinic_info", "patient_info", "treatment_table", "totals", "footer"]');
+
+CREATE TABLE IF NOT EXISTS mds_odontogram (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  patient_id INT NOT NULL,
+  tooth_number INT NOT NULL,
+  state ENUM('healthy', 'decayed', 'filled', 'missing', 'crown', 'bridge', 'implant', 'endodontic') DEFAULT 'healthy',
+  notes TEXT,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (patient_id) REFERENCES mds_patients(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS mds_pairing (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  pairing_code VARCHAR(10) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
 
 SET foreign_key_checks = 1;

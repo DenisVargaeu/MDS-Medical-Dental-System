@@ -21,13 +21,7 @@ import { renderClinicalSession } from '../../pages/clinical-session.js';
 import { renderSystem } from '../../pages/system.js';
 import { renderPairing } from '../../pages/pairing.js';
 import { renderTreatmentPlans } from '../../pages/treatment-plans.js';
-import { renderLabWork } from '../../pages/lab-work.js';
-import { renderPrescriptions } from '../../pages/prescriptions.js';
-import { renderRecall } from '../../pages/recall.js';
 import { renderStaff } from '../../pages/staff.js';
-import { renderDocuments } from '../../pages/documents.js';
-import { renderSterilization } from '../../pages/sterilization.js';
-import { renderSuppliers } from '../../pages/suppliers.js';
 
 // ── State ─────────────────────────────────────────────────────────
 let currentPage = 'dashboard';
@@ -54,13 +48,7 @@ const pageMap = {
   system:         { render: renderSystem,          label: 'System Info' },
   settings:       { render: renderSettings,        label: 'Settings' },
   'treatment-plans': { render: renderTreatmentPlans, label: 'Treatment Plans' },
-  'lab-work':      { render: renderLabWork,        label: 'Laboratory Work' },
-  'prescriptions': { render: renderPrescriptions,   label: 'Prescriptions' },
-  'recall':        { render: renderRecall,          label: 'Recall Manager' },
   'staff':         { render: renderStaff,           label: 'Staff Management' },
-  'documents':     { render: renderDocuments,       label: 'Document Gallery' },
-  'sterilization': { render: renderSterilization,   label: 'Hygiene & Sterilization' },
-  'suppliers':     { render: renderSuppliers,       label: 'Suppliers' },
 };
 
 // ── Toast System ──────────────────────────────────────────────────
@@ -90,7 +78,8 @@ export function navigateTo(page, params = {}) {
   if (!entry) return;
 
   currentPage = page;
-  document.getElementById('topbar-page').textContent = entry.label;
+  const labelEl = document.getElementById('topbar-page');
+  if (labelEl) labelEl.textContent = entry.label;
 
   // Update sidebar active state
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -197,9 +186,12 @@ function handlePairingExpiration() {
 
 // ── Boot ──────────────────────────────────────────────────────────
 async function boot() {
-  // Check if device is paired
+  console.log('MDS: Booting application...');
   const isPaired = localStorage.getItem('mds_is_paired') === 'true';
+  const pairingCode = localStorage.getItem('mds_pairing_code');
+
   if (!isPaired) {
+    console.log('MDS: Not paired, showing pairing screen.');
     showPairing();
     return;
   }
@@ -210,13 +202,24 @@ async function boot() {
   if (token && savedUser) {
     try {
       currentUser = JSON.parse(savedUser);
+      console.log('MDS: Session restored for', currentUser.name);
       showApp();
-      startPairingCheck(); // Start check if already app shown
+      startPairingCheck();
       return;
-    } catch (_) {}
+    } catch (e) {
+      console.error('MDS: Failed to restore session:', e);
+    }
   }
 
+  console.log('MDS: No active session, showing login.');
   showLogin();
+}
+
+try {
+  boot();
+} catch (err) {
+  console.error('MDS: Critical boot failure:', err);
+  if (window.onerror) window.onerror(err.message, 'app.js', 0, 0, err);
 }
 
 function showPairing() {
@@ -246,43 +249,57 @@ function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = '';
 
-  // Update sidebar user info
-  document.getElementById('sidebar-user-name').textContent = `${currentUser.name} ${currentUser.surname}`;
-  document.getElementById('sidebar-user-role').textContent = currentUser.role;
-  document.getElementById('sidebar-avatar').textContent = (currentUser.name[0] + currentUser.surname[0]).toUpperCase();
+  // Populate sidebar
+  const avatar = document.getElementById('sidebar-avatar');
+  const nameEl = document.getElementById('sidebar-user-name');
+  const roleEl = document.getElementById('sidebar-user-role');
+
+  // Populate Topbar User Pill
+  const topbarAvatar = document.getElementById('topbar-avatar');
+  const topbarName = document.getElementById('topbar-user-name');
+  const topbarRole = document.getElementById('topbar-user-role');
+
+  if (avatar) avatar.textContent = `${currentUser.name[0]}${currentUser.surname[0]}`;
+  if (nameEl) nameEl.textContent = `${currentUser.name} ${currentUser.surname}`;
+  if (roleEl) roleEl.textContent = currentUser.role;
+
+  if (topbarAvatar) topbarAvatar.textContent = `${currentUser.name[0]}${currentUser.surname[0]}`;
+  if (topbarName) topbarName.textContent = currentUser.name;
+  if (topbarRole) topbarRole.textContent = currentUser.role;
 
   if (!isInitialized) {
     initSidebar();
     initSearch();
     
-    document.getElementById('logout-btn').addEventListener('click', () => {
-      if (confirm('Are you sure you want to logout?')) {
-        if (notifInterval) {
-          clearInterval(notifInterval);
-          notifInterval = null;
-        }
+    document.getElementById('logout-btn')?.addEventListener('click', () => {
+      if (confirm('Are you sure you want to sign out?')) {
+        if (notifInterval) { clearInterval(notifInterval); notifInterval = null; }
         api.clearToken();
         sessionStorage.removeItem('mds_user');
-        showLogin();
+        window.location.reload(); 
       }
     });
 
-    document.getElementById('notif-btn').addEventListener('click', () => navigateTo('notifications'));
+    document.getElementById('notif-btn')?.addEventListener('click', () => navigateTo('notifications'));
+    
+    // User Profile Pill Navigation
+    document.getElementById('topbar-profile-trigger')?.addEventListener('click', () => {
+      navigateTo('settings');
+      // Potential future enhancement: auto-switch to "My Profile" tab in settings.js
+    });
+
     isInitialized = true;
   }
 
-  // Role-based nav hiding
-  if (currentUser.role === 'receptionist') {
+  if (currentUser.role !== 'admin') {
     document.getElementById('nav-records')?.remove();
     document.getElementById('nav-treatments')?.remove();
-  }
-  if (currentUser.role !== 'admin') {
+    document.getElementById('nav-inventory')?.remove();
     document.getElementById('nav-settings')?.remove();
     document.getElementById('nav-logs')?.remove();
     document.getElementById('nav-system')?.remove();
-  }
-  if (currentUser.role === 'receptionist') {
     document.getElementById('nav-reports')?.remove();
+    document.getElementById('nav-staff')?.remove();
   }
 
   navigateTo('dashboard');
@@ -290,7 +307,7 @@ function showApp() {
   startPairingCheck();
   
   if (!notifInterval) {
-    notifInterval = setInterval(refreshNotifBadge, 60000); // refresh every minute
+    notifInterval = setInterval(refreshNotifBadge, 60000);
   }
 }
 

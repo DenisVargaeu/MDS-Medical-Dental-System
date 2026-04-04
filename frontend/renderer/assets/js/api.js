@@ -1,12 +1,11 @@
 /**
- * MDS API Client
+ * MDS API Client - v1.7.0 Core Precision
  * Communicates with the backend REST API
  */
 
 let API_BASE = (localStorage.getItem('mds_server_url') ? `${localStorage.getItem('mds_server_url')}/api` : null) || 'http://localhost:3000/api';
 
 export function setServerUrl(url) {
-  // Ensure url doesn't end with /
   const cleanUrl = url.replace(/\/$/, '');
   API_BASE = `${cleanUrl}/api`;
   localStorage.setItem('mds_server_url', cleanUrl);
@@ -54,7 +53,6 @@ async function request(method, path, body = null, isFormData = false) {
   try {
     const res = await fetch(`${API_BASE}${path}`, options);
     
-    // Handle session expiry (but ignore for login route itself)
     if (res.status === 401 && path !== '/auth/login') {
       clearToken();
       window.dispatchEvent(new Event('auth:expired'));
@@ -71,15 +69,6 @@ async function request(method, path, body = null, isFormData = false) {
   }
 }
 
-/**
- * Simplified client for generic requests
- * Usage: client('/path', { method: 'POST', body: {...} })
- */
-export async function client(path, options = {}) {
-  return request(options.method || 'GET', path, options.body, options.isFormData);
-}
-
-// ── Auth ────────────────────────────────────────────────────────
 export const auth = {
   login: (email, password) => request('POST', '/auth/login', { email, password }),
   me: () => request('GET', '/auth/me'),
@@ -87,14 +76,12 @@ export const auth = {
   checkPairingStatus: (code) => request('GET', `/auth/pairing-status/${code}`),
 };
 
-// ── Patients ────────────────────────────────────────────────────
 export const patients = {
   list: (params = {}) => request('GET', `/patients?${new URLSearchParams(params)}`),
   get: (id) => request('GET', `/patients/${id}`),
   create: (data) => request('POST', '/patients', data),
   update: (id, data) => request('PUT', `/patients/${id}`, data),
   delete: (id) => request('DELETE', `/patients/${id}`),
-  // Sub-resources
   addAllergy: (id, data) => request('POST', `/patients/${id}/allergies`, data),
   deleteAllergy: (id, aid) => request('DELETE', `/patients/${id}/allergies/${aid}`),
   addMedication: (id, data) => request('POST', `/patients/${id}/medications`, data),
@@ -102,7 +89,6 @@ export const patients = {
   addDiagnosis: (id, data) => request('POST', `/patients/${id}/diagnoses`, data),
 };
 
-// ── Appointments ─────────────────────────────────────────────────
 export const appointments = {
   list: (params = {}) => request('GET', `/appointments?${new URLSearchParams(params)}`),
   today: () => request('GET', '/appointments/today'),
@@ -112,7 +98,6 @@ export const appointments = {
   cancel: (id, reason) => request('DELETE', `/appointments/${id}`, { cancellation_reason: reason }),
 };
 
-// ── Treatments ────────────────────────────────────────────────────
 export const treatments = {
   list: (params = {}) => request('GET', `/treatments?${new URLSearchParams(params)}`),
   categories: () => request('GET', '/treatments/categories'),
@@ -122,7 +107,6 @@ export const treatments = {
   delete: (id) => request('DELETE', `/treatments/${id}`),
 };
 
-// ── Medical Records ───────────────────────────────────────────────
 export const records = {
   list: (params = {}) => request('GET', `/records?${new URLSearchParams(params)}`),
   get: (id) => request('GET', `/records/${id}`),
@@ -132,7 +116,6 @@ export const records = {
   removeTreatment: (id, tid) => request('DELETE', `/records/${id}/treatments/${tid}`),
 };
 
-// ── Finance ───────────────────────────────────────────────────────
 export const finance = {
   invoices: (params = {}) => request('GET', `/finance/invoices?${new URLSearchParams(params)}`),
   getInvoice: (id) => request('GET', `/finance/invoices/${id}`),
@@ -141,53 +124,12 @@ export const finance = {
   stats: () => request('GET', '/finance/stats'),
 };
 
-// ── Files ─────────────────────────────────────────────────────────
-export const files = {
-  list: (patientId) => request('GET', `/files/patient/${patientId}`),
-  upload: (patientId, formData) => request('POST', `/files/upload/${patientId}`, formData, true),
-  downloadUrl: (id) => `${API_BASE}/files/${id}/download?token=${getToken()}`,
-  delete: (id) => request('DELETE', `/files/${id}`),
+export const vitals = {
+  list: (patientId) => request('GET', `/vitals/${patientId}`),
+  create: (data) => request('POST', '/vitals', data),
+  delete: (id) => request('DELETE', `/vitals/${id}`),
 };
 
-// ── Dashboard ─────────────────────────────────────────────────────
-export const dashboard = {
-  stats: () => request('GET', '/dashboard/stats'),
-};
-
-// ── Users ─────────────────────────────────────────────────────────
-export const users = {
-  list: () => request('GET', '/users'),
-  doctors: () => request('GET', '/users/doctors'),
-  create: (data) => request('POST', '/users', data),
-  update: (id, data) => request('PUT', `/users/${id}`, data),
-  resetPassword: (id, password) => request('PUT', `/users/${id}/reset-password`, { password }),
-};
-
-// ── Notifications ─────────────────────────────────────────────────
-export const notifications = {
-  list: () => request('GET', '/notifications'),
-  markRead: (id) => request('PATCH', `/notifications/${id}/read`),
-  markAllRead: () => request('PATCH', '/notifications/read-all'),
-};
-
-// ── Odontogram ────────────────────────────────────────────────────
-export const odontogram = {
-  get: (patientId) => request('GET', `/odontogram/${patientId}`),
-  update: (patientId, data) => request('POST', `/odontogram/${patientId}`, data),
-};
-
-// ── Inventory ─────────────────────────────────────────────────────
-export const inventory = {
-  list: () => request('GET', '/inventory'),
-  updateStock: (id, delta) => request('PATCH', `/inventory/${id}/stock`, { delta }),
-};
-
-// ── Logs ──────────────────────────────────────────────────────────
-export const logs = {
-  list: () => request('GET', '/logs'),
-};
-
-// ── Prescriptions ─────────────────────────────────────────────────
 export const treatmentPlans = {
   list: (params = {}) => request('GET', `/treatment-plans?${new URLSearchParams(params)}`),
   get: (id) => request('GET', `/treatment-plans/${id}`),
@@ -196,42 +138,41 @@ export const treatmentPlans = {
   updateItemStatus: (id, itemId, status, payment_action = null) => request('PATCH', `/treatment-plans/${id}/items/${itemId}/status`, { status, payment_action }),
 };
 
-// ── Settings ──────────────────────────────────────────────────────
+export const dashboard = {
+  stats: () => request('GET', '/dashboard/stats'),
+};
+
+export const users = {
+  list: () => request('GET', '/users'),
+  doctors: () => request('GET', '/users/doctors'),
+  create: (data) => request('POST', '/users', data),
+  update: (id, data) => request('PUT', `/users/${id}`, data),
+  resetPassword: (id, password) => request('PUT', `/users/${id}/reset-password`, { password }),
+};
+
+export const notifications = {
+  list: () => request('GET', '/notifications'),
+  markRead: (id) => request('PATCH', `/notifications/${id}/read`),
+  markAllRead: () => request('PATCH', '/notifications/read-all'),
+};
+
+export const odontogram = {
+  get: (patientId) => request('GET', `/odontogram/${patientId}`),
+  update: (patientId, data) => request('POST', `/odontogram/${patientId}`, data),
+};
+
+export const inventory = {
+  list: () => request('GET', '/inventory'),
+  updateStock: (id, delta) => request('PATCH', `/inventory/${id}/stock`, { delta }),
+};
+
+export const logs = {
+  list: () => request('GET', '/logs'),
+};
+
 export const settings = {
   get: (key) => request('GET', `/settings/${key}`),
   update: (key, value) => request('PUT', `/settings/${key}`, { value }),
-};
-
-export const labWork = {
-  list: (params = {}) => {
-    const q = new URLSearchParams(params).toString();
-    return request('GET', `/lab-work?${q}`);
-  },
-  get: (id) => request('GET', `/lab-work/${id}`),
-  create: (data) => request('POST', '/lab-work', data),
-  update: (id, data) => request('PATCH', `/lab-work/${id}`, data),
-  delete: (id) => request('DELETE', `/lab-work/${id}`)
-};
-
-export const prescriptions = {
-  list: (patientId) => request('GET', `/prescriptions?patientId=${patientId}`),
-  get: (id) => request('GET', `/prescriptions/${id}`),
-  create: (data) => request('POST', '/prescriptions', data),
-  delete: (id) => request('DELETE', `/prescriptions/${id}`)
-};
-
-export const sterilization = {
-  list: () => request('GET', '/sterilization'),
-  create: (data) => request('POST', '/sterilization', data),
-  delete: (id) => request('DELETE', `/sterilization/${id}`)
-};
-
-export const suppliers = {
-  list: (q = '') => request('GET', `/suppliers?q=${q}`),
-  get: (id) => request('GET', `/suppliers/${id}`),
-  create: (data) => request('POST', '/suppliers', data),
-  update: (id, data) => request('PATCH', `/suppliers/${id}`, data),
-  delete: (id) => request('DELETE', `/suppliers/${id}`)
 };
 
 export const staff = {

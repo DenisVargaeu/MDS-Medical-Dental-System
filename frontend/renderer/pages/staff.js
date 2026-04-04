@@ -83,45 +83,51 @@ export async function renderStaff(container, params = {}) {
         staffContainer.innerHTML = '';
         for (const u of users) {
            const card = document.createElement('div');
-           card.className = 'card staff-card p-24';
-           card.style.position = 'relative';
+           card.className = 'card stat-card animate-scale-in';
+           card.style.flexDirection = 'column';
+           card.style.padding = '24px';
+           card.style.gap = '0';
            
            // Fetch stats for this user
            let stats = { total_appointments: 0, total_records: 0, total_revenue: 0 };
-           try {
-              stats = await api.staff.getStats(u.id);
-           } catch (_) {}
+           try { stats = await api.staff.getStats(u.id); } catch (_) {}
+
+           const roleIcon = u.role === 'admin' ? 'fa-user-shield' : u.role === 'doctor' ? 'fa-stethoscope' : 'fa-user-edit';
 
            card.innerHTML = `
-              <div class="flex items-center gap-16" style="margin-bottom:20px">
-                 <div class="avatar" style="width:60px; height:60px; font-size:24px">${u.name[0]}${u.surname[0]}</div>
-                 <div>
-                    <div style="font-size:18px; font-weight:700">${u.name} ${u.surname}</div>
-                    <div class="badge badge-${u.role === 'admin' ? 'danger' : u.role === 'doctor' ? 'primary' : 'success'}">${u.role.toUpperCase()}</div>
+              <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px; width:100%">
+                 <div class="avatar avatar-md shadow">${u.name[0]}${u.surname[0]}</div>
+                 <div style="flex:1">
+                    <div style="font-size:17px; font-weight:800; color:var(--text-primary); letter-spacing:-0.3px">${u.name} ${u.surname}</div>
+                    <div class="badge ${u.role === 'admin' ? 'badge-danger' : u.role === 'doctor' ? 'badge-primary' : 'badge-info'}" style="margin-top:4px">
+                       <i class="fas ${roleIcon}"></i> ${u.role.toUpperCase()}
+                    </div>
                  </div>
-                 <div style="margin-left:auto">
-                    ${u.active ? '<span class="status-indicator online" title="Active"></span>' : '<span class="status-indicator offline" title="Inactive"></span>'}
+                 <div style="text-align:right">
+                    <span class="status-indicator" style="background:${u.active ? 'var(--success)' : 'var(--text-muted)'}; animation:${u.active ? 'pulseGreen 2s infinite' : 'none'}"></span>
                  </div>
               </div>
               
-              <div class="grid grid-3 gap-8" style="background:rgba(255,255,255,0.03); padding:12px; border-radius:12px; margin-bottom:20px">
-                 <div class="text-center">
-                    <div style="font-size:16px; font-weight:700">${stats.total_appointments}</div>
-                    <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase">Appts</div>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; background:var(--bg-app); padding:16px; border-radius:var(--radius); margin-bottom:24px; width:100%">
+                 <div style="text-align:center">
+                    <div style="font-size:15px; font-weight:800; color:var(--primary)">${stats.total_appointments}</div>
+                    <div style="font-size:9px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px">Apps</div>
                  </div>
-                 <div class="text-center">
-                    <div style="font-size:16px; font-weight:700">${stats.total_records}</div>
-                    <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase">Records</div>
+                 <div style="text-align:center; border-left:1px solid var(--border); border-right:1px solid var(--border)">
+                    <div style="font-size:15px; font-weight:800; color:var(--text-primary)">${stats.total_records}</div>
+                    <div style="font-size:9px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px">Records</div>
                  </div>
-                 <div class="text-center">
-                    <div style="font-size:16px; font-weight:700">€${parseFloat(stats.total_revenue).toFixed(0)}</div>
-                    <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase">Revenue</div>
+                 <div style="text-align:center">
+                    <div style="font-size:15px; font-weight:800; color:var(--success)">€${parseFloat(stats.total_revenue).toFixed(0)}</div>
+                    <div style="font-size:9px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px">Revenue</div>
                  </div>
               </div>
 
-              <div class="flex gap-8">
-                 <button class="btn btn-sm btn-outline flex-1 reset-pass" data-id="${u.id}"><i class="fas fa-key"></i> Reset</button>
-                 <button class="btn btn-sm btn-ghost toggle-active" data-id="${u.id}" data-active="${u.active}">${u.active ? 'Suspend' : 'Activate'}</button>
+              <div style="display:flex; gap:8px; width:100%">
+                 <button class="btn btn-secondary btn-sm flex-1 reset-pass" data-id="${u.id}" title="Reset Password"><i class="fas fa-key"></i> Reset</button>
+                 <button class="btn btn-ghost btn-sm flex-1 toggle-active" data-id="${u.id}" data-active="${u.active}" style="color:${u.active?'var(--danger)':'var(--success)'}">
+                    <i class="fas ${u.active?'fa-user-slash':'fa-user-check'}"></i> ${u.active ? 'Suspend' : 'Activate'}
+                 </button>
               </div>
            `;
            staffContainer.appendChild(card);

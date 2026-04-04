@@ -46,7 +46,7 @@ export async function renderDashboard(container) {
 
     <!-- Stat cards -->
     <div class="stat-grid">
-      <div class="stat-card premium-blue">
+      <div class="stat-card premium-blue" onclick="mdsNavigateTo('patients')" style="cursor:pointer">
         <div class="stat-main">
           <div class="stat-value">${patients.total}</div>
           <div class="stat-label">Total Patients</div>
@@ -56,7 +56,7 @@ export async function renderDashboard(container) {
         </div>
         <div class="stat-bg-icon"><i class="fas fa-user-injured"></i></div>
       </div>
-      <div class="stat-card premium-green">
+      <div class="stat-card premium-green" onclick="mdsNavigateTo('appointments')" style="cursor:pointer">
         <div class="stat-main">
           <div class="stat-value">${appointments.total}</div>
           <div class="stat-label">Appointments Today</div>
@@ -66,7 +66,7 @@ export async function renderDashboard(container) {
         </div>
         <div class="stat-bg-icon"><i class="fas fa-calendar-check"></i></div>
       </div>
-      <div class="stat-card premium-orange">
+      <div class="stat-card premium-orange" onclick="mdsNavigateTo('finance')" style="cursor:pointer">
         <div class="stat-main">
           <div class="stat-value">${fmt(revenue.today, '€')}</div>
           <div class="stat-label">Today's Revenue</div>
@@ -76,7 +76,7 @@ export async function renderDashboard(container) {
         </div>
         <div class="stat-bg-icon"><i class="fas fa-euro-sign"></i></div>
       </div>
-      <div class="stat-card premium-purple">
+      <div class="stat-card premium-purple" onclick="mdsNavigateTo('finance')" style="cursor:pointer">
         <div class="stat-main">
           <div class="stat-value">${fmt(outstanding.reduce((s,i)=>s+parseFloat(i.balance),0), '€')}</div>
           <div class="stat-label">Outstanding Balance</div>
