@@ -193,5 +193,5 @@ export const treatmentPlans = {
   get: (id) => request('GET', `/treatment-plans/${id}`),
   create: (data) => request('POST', '/treatment-plans', data),
   updateStatus: (id, status) => request('PATCH', `/treatment-plans/${id}/status`, { status }),
-  updateItemStatus: (id, itemId, status) => request('PATCH', `/treatment-plans/${id}/items/${itemId}/status`, { status }),
+  updateItemStatus: (id, itemId, status, payment_action = null) => request('PATCH', `/treatment-plans/${id}/items/${itemId}/status`, { status, payment_action }),
 };

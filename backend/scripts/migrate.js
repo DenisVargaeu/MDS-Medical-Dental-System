@@ -60,6 +60,8 @@ async function migrate() {
         tooth_number VARCHAR(10),
         notes TEXT,
         status ENUM('pending', 'completed', 'skipped') DEFAULT 'pending',
+        payment_status ENUM('unpaid', 'paid', 'waived') DEFAULT 'unpaid',
+        invoice_id INT NULL,
         FOREIGN KEY (plan_id) REFERENCES mds_treatment_plans(id) ON DELETE CASCADE,
         FOREIGN KEY (treatment_id) REFERENCES mds_treatments(id) ON DELETE RESTRICT
       ) ENGINE=InnoDB;`

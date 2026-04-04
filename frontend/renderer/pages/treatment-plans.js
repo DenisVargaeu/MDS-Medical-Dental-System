@@ -276,7 +276,12 @@ export async function renderTreatmentPlans(container, params = {}) {
                           </div>
                           <div class="flex items-center gap-12">
                             <div style="font-size:13px; font-weight:800; color:var(--text-primary); margin-right:16px">€${parseFloat(item.treatment_price).toFixed(2)}</div>
-                            <span class="badge badge-${item.status==='completed'?'success':item.status==='skipped'?'muted':'warning'}">${item.status}</span>
+                            <div class="flex items-center gap-4">
+                              <span class="badge badge-${item.status==='completed'?'success':item.status==='skipped'?'muted':'warning'}">${item.status}</span>
+                              ${item.status === 'completed' ? `
+                                <i class="fas fa-coins" style="color:${item.payment_status === 'paid' ? 'var(--success)' : 'var(--text-muted)'}; font-size:12px" title="${item.payment_status === 'paid' ? 'Paid' : 'Unpaid'}"></i>
+                              ` : ''}
+                            </div>
                             ${isManagement && plan.status === 'active' ? `
                               <div class="flex gap-4 ml-8">
                                 <button class="tp-action-btn success update-item-status" data-id="${item.id}" data-status="completed" title="Complete"><i class="fas fa-check"></i></button>
@@ -308,14 +313,67 @@ export async function renderTreatmentPlans(container, params = {}) {
       // Status Handlers
       modal.querySelectorAll('.update-item-status').forEach(btn => {
         btn.onclick = async () => {
+          const newStatus = btn.dataset.status;
+          const itemId = btn.dataset.id;
+          
+          if (newStatus === 'completed') {
+             // Show Payment Prompt instead of immediate update
+             showPaymentPrompt(plan.id, itemId);
+          } else {
+            try {
+              await api.treatmentPlans.updateItemStatus(plan.id, itemId, newStatus);
+              modal.remove();
+              await window.managePlan(plan.id);
+              renderTreatmentPlans(container, params);
+            } catch (err) { window.mdsToast(err.message, 'error'); }
+          }
+        };
+      });
+
+      function showPaymentPrompt(planId, itemId) {
+        const prompt = document.createElement('div');
+        prompt.className = 'modal-backdrop open';
+        prompt.style.zIndex = '2000';
+        prompt.innerHTML = `
+          <div class="modal modal-sm animate-fade-in">
+            <div class="modal-header">
+              <div class="modal-title"><i class="fas fa-wallet text-primary"></i> Payment Choice</div>
+            </div>
+            <div class="modal-body text-center">
+              <p style="font-size:14px; margin-bottom:20px">Treatment completed! Would you like to create an invoice <strong>now</strong> or add it to the <strong>final bill</strong>?</p>
+              <div class="flex flex-col gap-8">
+                <button class="btn btn-primary w-full" id="pay-now-btn"><i class="fas fa-file-invoice-dollar"></i> Pay Now (Platba teraz)</button>
+                <button class="btn btn-secondary w-full" id="pay-later-btn"><i class="fas fa-clock"></i> Pay Later (Na konci)</button>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-ghost" onclick="this.closest('.modal-backdrop').remove()">Cancel</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(prompt);
+
+        prompt.querySelector('#pay-now-btn').onclick = async () => {
           try {
-            await api.treatmentPlans.updateItemStatus(plan.id, btn.dataset.id, btn.dataset.status);
+            await api.treatmentPlans.updateItemStatus(planId, itemId, 'completed', 'pay_now');
+            window.mdsToast('Invoice generated successfully!', 'success');
+            prompt.remove();
             modal.remove();
-            await window.managePlan(plan.id);
+            await window.managePlan(planId);
             renderTreatmentPlans(container, params);
           } catch (err) { window.mdsToast(err.message, 'error'); }
         };
-      });
+
+        prompt.querySelector('#pay-later-btn').onclick = async () => {
+          try {
+            await api.treatmentPlans.updateItemStatus(planId, itemId, 'completed', 'pay_later');
+            prompt.remove();
+            modal.remove();
+            await window.managePlan(planId);
+            renderTreatmentPlans(container, params);
+          } catch (err) { window.mdsToast(err.message, 'error'); }
+        };
+      }
 
       document.getElementById('activate-plan-btn')?.addEventListener('click', async () => {
         try {

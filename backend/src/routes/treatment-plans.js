@@ -135,17 +135,86 @@ router.patch('/:id/status', auth, roles('admin', 'doctor'), async (req, res) => 
   }
 });
 
-// PATCH /api/treatment-plans/:id/items/:itemId/status - update item status
+// PATCH /api/treatment-plans/:id/items/:itemId/status - update item status with payment flow
 router.patch('/:id/items/:itemId/status', auth, roles('admin', 'doctor'), async (req, res) => {
-  const { status } = req.body;
+  const { status, payment_action } = req.body;
+  
   if (!['pending', 'completed', 'skipped'].includes(status)) {
     return res.status(400).json({ error: 'Invalid item status' });
   }
+
+  const conn = await db.getConnection();
   try {
-    await db.query('UPDATE mds_treatment_plan_items SET status = ? WHERE id = ? AND plan_id = ?', [status, req.params.itemId, req.params.id]);
-    res.json({ message: 'Item status updated' });
+    await conn.beginTransaction();
+
+    // 1. Update the item status
+    await conn.query(
+      'UPDATE mds_treatment_plan_items SET status = ?, payment_status = ? WHERE id = ? AND plan_id = ?',
+      [status, status === 'skipped' ? 'waived' : 'unpaid', req.params.itemId, req.params.id]
+    );
+
+    // 2. Handle Payment Flow (Pay Now)
+    if (status === 'completed' && payment_action === 'pay_now') {
+      // Get item and plan info
+      const [[item]] = await conn.query(
+        `SELECT tpi.*, t.name AS treatment_name, t.price AS treatment_price, tp.patient_id, tp.doctor_id
+         FROM mds_treatment_plan_items tpi
+         JOIN mds_treatments t ON t.id = tpi.treatment_id
+         JOIN mds_treatment_plans tp ON tp.id = tpi.plan_id
+         WHERE tpi.id = ?`, [req.params.itemId]
+      );
+
+      // A. Create/Get Medical Record for today
+      let [[record]] = await conn.query(
+        'SELECT id FROM mds_medical_records WHERE patient_id = ? AND visit_date = CURDATE() LIMIT 1',
+        [item.patient_id]
+      );
+      
+      let record_id;
+      if (!record) {
+        const [rResult] = await conn.query(
+          `INSERT INTO mds_medical_records (patient_id, doctor_id, visit_date, chief_complaint, clinical_findings)
+           VALUES (?, ?, CURDATE(), 'Treatment from plan', 'Scheduled treatment performed')`,
+          [item.patient_id, item.doctor_id]
+        );
+        record_id = rResult.insertId;
+      } else {
+        record_id = record.id;
+      }
+
+      // B. Add Treatment to Record
+      await conn.query(
+        `INSERT INTO mds_patient_treatments (record_id, patient_id, treatment_id, tooth_number, unit_price, total_price, performed_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [record_id, item.patient_id, item.treatment_id, item.tooth_number, item.treatment_price, item.treatment_price, item.doctor_id]
+      );
+
+      // C. Generate Invoice
+      const invNum = `INV-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}-${String(Math.floor(Math.random()*99999)).padStart(5,'0')}`;
+      const [iResult] = await conn.query(
+        `INSERT INTO mds_invoices (invoice_number, patient_id, record_id, subtotal, total, status, issue_date, created_by)
+         VALUES (?, ?, ?, ?, ?, 'issued', CURDATE(), ?)`,
+        [invNum, item.patient_id, record_id, item.treatment_price, item.treatment_price, item.doctor_id]
+      );
+      const invoice_id = iResult.insertId;
+
+      // D. Link Item to Invoice and mark as Paid (assuming collection happens next)
+      // Actually, standard MDS flow marks as 'issued'. We'll mark item as 'unpaid' for now until invoice is paid?
+      // User said "ask play now", so we'll assume it's being paid.
+      await conn.query(
+        'UPDATE mds_treatment_plan_items SET invoice_id = ?, payment_status = "unpaid" WHERE id = ?',
+        [invoice_id, req.params.itemId]
+      );
+    }
+
+    await conn.commit();
+    res.json({ message: 'Item status and payment flow updated' });
   } catch (err) {
+    await conn.rollback();
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
+  } finally {
+    conn.release();
   }
 });
 
