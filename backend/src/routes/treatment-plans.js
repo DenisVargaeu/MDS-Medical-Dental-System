@@ -183,11 +183,12 @@ router.patch('/:id/items/:itemId/status', auth, roles('admin', 'doctor'), async 
       }
 
       // B. Add Treatment to Record
-      await conn.query(
+      const [ptResult] = await conn.query(
         `INSERT INTO mds_patient_treatments (record_id, patient_id, treatment_id, tooth_number, unit_price, total_price, performed_by)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [record_id, item.patient_id, item.treatment_id, item.tooth_number, item.treatment_price, item.treatment_price, item.doctor_id]
       );
+      const treatment_row_id = ptResult.insertId;
 
       // C. Generate Invoice
       const invNum = `INV-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}-${String(Math.floor(Math.random()*99999)).padStart(5,'0')}`;
@@ -198,9 +199,10 @@ router.patch('/:id/items/:itemId/status', auth, roles('admin', 'doctor'), async 
       );
       const invoice_id = iResult.insertId;
 
-      // D. Link Item to Invoice and mark as Paid (assuming collection happens next)
-      // Actually, standard MDS flow marks as 'issued'. We'll mark item as 'unpaid' for now until invoice is paid?
-      // User said "ask play now", so we'll assume it's being paid.
+      // D. Link Treatment Item to Invoice
+      await conn.query('UPDATE mds_patient_treatments SET invoice_id = ? WHERE id = ?', [invoice_id, treatment_row_id]);
+
+      // E. Link Plan Item to Invoice
       await conn.query(
         'UPDATE mds_treatment_plan_items SET invoice_id = ?, payment_status = "unpaid" WHERE id = ?',
         [invoice_id, req.params.itemId]

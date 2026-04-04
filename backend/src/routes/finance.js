@@ -66,7 +66,7 @@ router.get('/invoices/:id', auth, async (req, res) => {
     const [items] = await db.query(
       `SELECT pt.*, t.name AS treatment_name, t.category
        FROM mds_patient_treatments pt JOIN mds_treatments t ON t.id = pt.treatment_id
-       WHERE pt.record_id = ?`, [invoice.record_id]
+       WHERE pt.invoice_id = ?`, [invoice.id]
     );
     res.json({ invoice, items });
   } catch (err) {
@@ -99,7 +99,14 @@ router.post('/invoices', auth, roles('admin', 'receptionist', 'doctor'), async (
        VALUES (?, ?, ?, ?, ?, ?, ?, 'issued', CURDATE(), ?, ?, ?, ?)`,
       [invoiceNumber, patient_id, record_id || null, total, discountPct, discountAmt, finalTotal, due_date || null, notes || null, payment_method || null, req.user.id]
     );
-    const [[created]] = await db.query('SELECT * FROM mds_invoices WHERE id = ?', [result.insertId]);
+    const invoice_id = result.insertId;
+    
+    // Link items to invoice if record_id is provided
+    if (record_id) {
+      await db.query('UPDATE mds_patient_treatments SET invoice_id = ? WHERE record_id = ? AND invoice_id IS NULL', [invoice_id, record_id]);
+    }
+
+    const [[created]] = await db.query('SELECT * FROM mds_invoices WHERE id = ?', [invoice_id]);
     res.status(201).json(created);
   } catch (err) {
     console.error(err);

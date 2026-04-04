@@ -73,7 +73,10 @@ async function migrate() {
       ) ENGINE=InnoDB;`,
 
       `INSERT IGNORE INTO mds_settings (setting_key, setting_value) VALUES 
-       ('invoice_template', '["header", "clinic_info", "patient_info", "treatment_table", "totals", "footer"]');`
+       ('invoice_template', '["header", "clinic_info", "patient_info", "treatment_table", "totals", "footer"]');`,
+
+      `ALTER TABLE mds_patient_treatments ADD COLUMN IF NOT EXISTS invoice_id INT NULL;`,
+      `ALTER TABLE mds_patient_treatments ADD CONSTRAINT fk_treatment_invoice FOREIGN KEY (invoice_id) REFERENCES mds_invoices(id) ON DELETE SET NULL;`
     ];
 
     for (let i = 0; i < queries.length; i++) {
