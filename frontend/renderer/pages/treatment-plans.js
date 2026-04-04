@@ -165,14 +165,164 @@ export async function renderTreatmentPlans(container, params = {}) {
 
     window.viewPlan = async (id) => {
       const plan = await api.treatmentPlans.get(id);
-      alert(`Treatment Plan: ${plan.title}\n\nPatient: ${plan.patient_first_name} ${plan.patient_last_name}\nDoctor: Dr. ${plan.doctor_name} ${plan.doctor_surname}\n\nItems:\n` + 
-        plan.items.map(i => `Phase ${i.phase_number}: ${i.treatment_name} (${i.status})`).join('\n')
-      );
+      renderDetailedPlan(plan);
     };
 
-    window.managePlan = (id, pid) => {
-       window.mdsToast('Detailed plan management coming soon in v1.2.0', 'info');
+    window.managePlan = async (id) => {
+      const plan = await api.treatmentPlans.get(id);
+      renderDetailedPlan(plan, true);
     };
+
+    function renderDetailedPlan(plan, isManagement = false) {
+      const modal = document.createElement('div');
+      modal.className = 'modal-backdrop open';
+      modal.id = 'plan-detail-modal';
+      
+      // Calculate Progress
+      const items = plan.items || [];
+      const completed = items.filter(i => i.status === 'completed').length;
+      const skipped = items.filter(i => i.status === 'skipped').length;
+      const progress = items.length > 0 ? Math.round(((completed + skipped) / items.length) * 100) : 0;
+      
+      const totalCost = parseFloat(plan.total_estimated_cost || 0);
+      const remainingCost = items.filter(i => i.status === 'pending').reduce((sum, i) => sum + parseFloat(i.treatment_price || 0), 0);
+
+      // Group items by phase
+      const phases = {};
+      items.forEach(i => {
+        if (!phases[i.phase_number]) phases[i.phase_number] = [];
+        phases[i.phase_number].push(i);
+      });
+
+      modal.innerHTML = `
+        <div class="modal modal-xl">
+          <div class="modal-header">
+            <div class="modal-title">
+              <span class="badge badge-${plan.status === 'active' ? 'primary' : plan.status === 'completed' ? 'success' : 'muted'}" style="margin-right:8px">${plan.status.toUpperCase()}</span>
+              ${plan.title}
+            </div>
+            <div class="modal-close" onclick="this.closest('.modal-backdrop').remove()"><i class="fas fa-times"></i></div>
+          </div>
+          <div class="modal-body bg-light" style="padding:0">
+            <div class="grid grid-12" style="height:100%">
+              <!-- Left Sidebar: Info & Stats -->
+              <div class="col-span-4 border-right" style="padding:24px; background:#fff">
+                <div class="patient-snippet mb-24">
+                  <h5 class="form-label" style="margin-bottom:12px">Patient Information</h5>
+                  <div class="flex items-center gap-12">
+                    <div class="avatar avatar-lg">${plan.patient_first_name[0]}${plan.patient_last_name[0]}</div>
+                    <div>
+                      <div style="font-weight:700;font-size:16px">${plan.patient_first_name} ${plan.patient_last_name}</div>
+                      <div style="font-size:12px;color:var(--text-muted)">Created by Dr. ${plan.doctor_surname}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="progression-box mb-24">
+                  <div class="flex justify-between mb-8">
+                    <span style="font-size:12px;font-weight:700">PLAN PROGRESS</span>
+                    <span style="font-size:12px;font-weight:800">${progress}%</span>
+                  </div>
+                  <div style="height:12px;background:var(--bg-app);border-radius:6px;overflow:hidden">
+                    <div style="height:100%;width:${progress}%;background:var(--success);transition:width 0.4s ease"></div>
+                  </div>
+                </div>
+
+                <div class="financials card-body border rounded-lg" style="background:var(--bg-app)">
+                  <div class="flex justify-between mb-12">
+                    <span style="font-size:13px;color:var(--text-secondary)">Total Estimate</span>
+                    <span style="font-weight:700">€${totalCost.toFixed(2)}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span style="font-size:13px;color:var(--text-secondary)">Remaining</span>
+                    <span style="font-weight:700;color:var(--primary)">€${remainingCost.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                ${plan.description ? `<div class="mt-24"><label class="form-label">Clinical Notes</label><p style="font-size:13px; line-height:1.5">${plan.description}</p></div>` : ''}
+              </div>
+
+              <!-- Right: Detailed Phases -->
+              <div class="col-span-8" style="padding:24px; overflow-y:auto; height:calc(90vh - 120px)">
+                ${Object.keys(phases).sort().map(phaseNum => `
+                  <div class="phase-section mb-32">
+                    <div class="phase-header flex items-center gap-12 mb-16">
+                      <div style="background:var(--primary); color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px">P${phaseNum}</div>
+                      <h4 style="font-size:14px; font-weight:700">PHASE ${phaseNum}</h4>
+                      <div style="flex:1; height:1px; background:var(--border)"></div>
+                    </div>
+                    <div class="phase-grid" style="display:flex; flex-direction:column; gap:12px">
+                      ${phases[phaseNum].map(item => `
+                        <div class="card p-16 flex items-center justify-between transition" style="border-left: 4px solid ${item.status==='completed'?'var(--success)':item.status==='skipped'?'var(--text-muted)':'var(--primary)'}">
+                          <div style="flex:1">
+                            <div style="font-weight:700">${item.treatment_name}</div>
+                            <div style="font-size:11px; color:var(--text-muted)">
+                              ${item.tooth_number ? `Tooth: <strong>${item.tooth_number}</strong>` : 'General area'} 
+                              ${item.notes ? `| ${item.notes}` : ''}
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-12">
+                            <div style="font-size:12px; font-weight:800; color:var(--primary); margin-right:12px">€${parseFloat(item.treatment_price).toFixed(2)}</div>
+                            <span class="badge badge-${item.status==='completed'?'success':item.status==='skipped'?'muted':'warning'}">${item.status}</span>
+                            ${isManagement && plan.status === 'active' ? `
+                              <div class="flex gap-4">
+                                <button class="btn btn-icon btn-secondary update-item-status" data-id="${item.id}" data-status="completed" title="Complete"><i class="fas fa-check text-success"></i></button>
+                                <button class="btn btn-icon btn-secondary update-item-status" data-id="${item.id}" data-status="skipped" title="Skip"><i class="fas fa-times text-muted"></i></button>
+                                <button class="btn btn-icon btn-secondary update-item-status" data-id="${item.id}" data-status="pending" title="Reset"><i class="fas fa-undo"></i></button>
+                              </div>
+                            ` : ''}
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            ${isManagement ? `
+              ${plan.status === 'draft' ? `<button class="btn btn-primary" id="activate-plan-btn"><i class="fas fa-play"></i> Activate Plan</button>` : ''}
+              ${plan.status === 'active' ? `<button class="btn btn-success" id="complete-plan-btn"><i class="fas fa-flag-checkered"></i> Complete Full Plan</button>` : ''}
+            ` : ''}
+            <button class="btn btn-secondary" onclick="this.closest('.modal-backdrop').remove()">Close</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // Status Handlers
+      modal.querySelectorAll('.update-item-status').forEach(btn => {
+        btn.onclick = async () => {
+          try {
+            await api.treatmentPlans.updateItemStatus(plan.id, btn.dataset.id, btn.dataset.status);
+            modal.remove();
+            await window.managePlan(plan.id);
+            renderTreatmentPlans(container, params);
+          } catch (err) { window.mdsToast(err.message, 'error'); }
+        };
+      });
+
+      document.getElementById('activate-plan-btn')?.addEventListener('click', async () => {
+        try {
+          await api.treatmentPlans.updateStatus(plan.id, 'active');
+          modal.remove();
+          await window.managePlan(plan.id);
+          renderTreatmentPlans(container, params);
+        } catch (err) { window.mdsToast(err.message, 'error'); }
+      });
+
+      document.getElementById('complete-plan-btn')?.addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to mark this entire plan as COMPLETED?')) return;
+        try {
+          await api.treatmentPlans.updateStatus(plan.id, 'completed');
+          modal.remove();
+          await window.viewPlan(plan.id);
+          renderTreatmentPlans(container, params);
+        } catch (err) { window.mdsToast(err.message, 'error'); }
+      });
+    }
 
   } catch (err) {
     container.innerHTML = `<div class="empty-state"><h3>Error: ${err.message}</h3></div>`;

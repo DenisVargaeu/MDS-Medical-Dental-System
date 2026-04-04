@@ -1,6 +1,6 @@
 {
   "name": "mds-backend",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "MDS Medical Dental System - REST API Backend",
   "main": "src/server.js",
   "scripts": {
