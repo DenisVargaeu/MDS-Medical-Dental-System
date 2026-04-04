@@ -174,6 +174,10 @@ export async function renderTreatmentPlans(container, params = {}) {
     };
 
     function renderDetailedPlan(plan, isManagement = false) {
+      // Cleanup existing modal if present (v1.3.1 performance fix)
+      const existing = document.getElementById('plan-detail-modal');
+      if (existing) existing.remove();
+
       const modal = document.createElement('div');
       modal.className = 'modal-backdrop open';
       modal.id = 'plan-detail-modal';
@@ -318,21 +322,27 @@ export async function renderTreatmentPlans(container, params = {}) {
           
           if (newStatus === 'completed') {
              // Show Payment Prompt instead of immediate update
-             showPaymentPrompt(plan.id, itemId);
+             showPaymentPrompt(plan.id, itemId, isManagement);
           } else {
             try {
               await api.treatmentPlans.updateItemStatus(plan.id, itemId, newStatus);
               modal.remove();
-              await window.managePlan(plan.id);
+              if (isManagement) await window.managePlan(plan.id);
+              else await window.viewPlan(plan.id);
               renderTreatmentPlans(container, params);
             } catch (err) { window.mdsToast(err.message, 'error'); }
           }
         };
       });
 
-      function showPaymentPrompt(planId, itemId) {
+      function showPaymentPrompt(planId, itemId, isManagementMode) {
+        // Cleanup any old prompts
+        const oldPrompt = document.getElementById('payment-prompt-modal');
+        if (oldPrompt) oldPrompt.remove();
+
         const prompt = document.createElement('div');
         prompt.className = 'modal-backdrop open';
+        prompt.id = 'payment-prompt-modal';
         prompt.style.zIndex = '2000';
         prompt.innerHTML = `
           <div class="modal modal-sm animate-fade-in">
@@ -359,7 +369,8 @@ export async function renderTreatmentPlans(container, params = {}) {
             window.mdsToast('Invoice generated successfully!', 'success');
             prompt.remove();
             modal.remove();
-            await window.managePlan(planId);
+            if (isManagementMode) await window.managePlan(planId);
+            else await window.viewPlan(planId);
             renderTreatmentPlans(container, params);
           } catch (err) { window.mdsToast(err.message, 'error'); }
         };
@@ -369,7 +380,8 @@ export async function renderTreatmentPlans(container, params = {}) {
             await api.treatmentPlans.updateItemStatus(planId, itemId, 'completed', 'pay_later');
             prompt.remove();
             modal.remove();
-            await window.managePlan(planId);
+            if (isManagementMode) await window.managePlan(planId);
+            else await window.viewPlan(planId);
             renderTreatmentPlans(container, params);
           } catch (err) { window.mdsToast(err.message, 'error'); }
         };
