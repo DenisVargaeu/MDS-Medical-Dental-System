@@ -36,6 +36,8 @@ app.use('/api/odontogram', require('./routes/odontogram'));
 app.use('/api/logs', require('./routes/logs'));
 app.use('/api/treatment-plans', require('./routes/treatment-plans'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/lab-work', require('./routes/lab-work'));
+app.use('/api/prescriptions', require('./routes/prescriptions'));
 
 // Health check
 app.get('/api/health', (req, res) => {

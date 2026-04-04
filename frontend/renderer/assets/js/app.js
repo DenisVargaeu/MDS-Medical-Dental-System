@@ -21,6 +21,9 @@ import { renderClinicalSession } from '../../pages/clinical-session.js';
 import { renderSystem } from '../../pages/system.js';
 import { renderPairing } from '../../pages/pairing.js';
 import { renderTreatmentPlans } from '../../pages/treatment-plans.js';
+import { renderLabWork } from '../../pages/lab-work.js';
+import { renderPrescriptions } from '../../pages/prescriptions.js';
+import { renderRecall } from '../../pages/recall.js';
 
 // ── State ─────────────────────────────────────────────────────────
 let currentPage = 'dashboard';
@@ -47,6 +50,9 @@ const pageMap = {
   system:         { render: renderSystem,          label: 'System Info' },
   settings:       { render: renderSettings,        label: 'Settings' },
   'treatment-plans': { render: renderTreatmentPlans, label: 'Treatment Plans' },
+  'lab-work':      { render: renderLabWork,        label: 'Laboratory Work' },
+  'prescriptions': { render: renderPrescriptions,   label: 'Prescriptions' },
+  'recall':        { render: renderRecall,          label: 'Recall Manager' },
 };
 
 // ── Toast System ──────────────────────────────────────────────────

@@ -201,3 +201,21 @@ export const settings = {
   get: (key) => request('GET', `/settings/${key}`),
   update: (key, value) => request('PUT', `/settings/${key}`, { value }),
 };
+
+export const labWork = {
+  list: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request('GET', `/lab-work?${q}`);
+  },
+  get: (id) => request('GET', `/lab-work/${id}`),
+  create: (data) => request('POST', '/lab-work', data),
+  update: (id, data) => request('PATCH', `/lab-work/${id}`, data),
+  delete: (id) => request('DELETE', `/lab-work/${id}`)
+};
+
+export const prescriptions = {
+  list: (patientId) => request('GET', `/prescriptions?patientId=${patientId}`),
+  get: (id) => request('GET', `/prescriptions/${id}`),
+  create: (data) => request('POST', '/prescriptions', data),
+  delete: (id) => request('DELETE', `/prescriptions/${id}`)
+};
