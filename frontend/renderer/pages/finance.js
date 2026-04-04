@@ -166,11 +166,18 @@ export async function renderFinance(container, params = {}) {
             <td style="font-weight:700;color:${parseFloat(inv.balance)>0?'var(--danger)':'var(--success)'}">€${parseFloat(inv.balance).toFixed(2)}</td>
             <td><span class="badge ${statusCls[inv.status]||'badge-muted'}">${inv.status}</span></td>
             <td>
-              ${inv.status !== 'paid' && inv.status !== 'cancelled' ? `<button class="btn btn-sm btn-success pay-btn" data-id="${inv.id}" data-balance="${inv.balance}"><i class="fas fa-credit-card"></i> Pay</button>` : ''}
+              <div class="flex gap-4">
+                <button class="btn btn-sm btn-ghost view-inv-btn" data-id="${inv.id}" title="View/Print"><i class="fas fa-print"></i></button>
+                ${inv.status !== 'paid' && inv.status !== 'cancelled' ? `<button class="btn btn-sm btn-success pay-btn" data-id="${inv.id}" data-balance="${inv.balance}"><i class="fas fa-credit-card"></i> Pay</button>` : ''}
+              </div>
             </td>
           </tr>`).join('')}
         </tbody>
       </table>`;
+
+      document.querySelectorAll('.view-inv-btn').forEach(btn => {
+        btn.addEventListener('click', () => window.mdsRenderInvoiceModal(btn.dataset.id));
+      });
 
       document.querySelectorAll('.pay-btn').forEach(btn => {
         btn.addEventListener('click', () => {

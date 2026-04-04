@@ -14,8 +14,8 @@ export async function renderSettings(container) {
     <!-- Settings Sidebar -->
     <div class="card" style="height:fit-content">
       <div style="padding:8px">
-        ${['Users','My Profile','System'].map((s,i) => {
-          const icons = { 'Users': '<i class="fas fa-users-cog"></i>', 'My Profile': '<i class="fas fa-user-circle"></i>', 'System': '<i class="fas fa-server"></i>' };
+        ${['Users','My Profile','Invoices','System'].map((s,i) => {
+          const icons = { 'Users': '<i class="fas fa-users-cog"></i>', 'My Profile': '<i class="fas fa-user-circle"></i>', 'Invoices': '<i class="fas fa-file-invoice"></i>', 'System': '<i class="fas fa-server"></i>' };
           return `<div class="nav-item ${i===0?'active':''}" data-stab="${s.toLowerCase().replace(' ','-')}" style="color:var(--text-primary);display:flex;align-items:center;gap:10px">${icons[s]} ${s}</div>`
         }).join('')}
       </div>
@@ -87,7 +87,7 @@ export async function renderSettings(container) {
             <table style="max-width:400px">
               <tbody>
                 <tr><td style="color:var(--text-muted);padding:8px 0">Application</td><td style="font-weight:600">MDS - Medical Dental System</td></tr>
-                <tr><td style="color:var(--text-muted);padding:8px 0">Version</td><td>v1.1.0-beta</td></tr>
+                <tr><td style="color:var(--text-muted);padding:8px 0">Version</td><td>v1.4.0</td></tr>
                 <tr><td style="color:var(--text-muted);padding:8px 0">API Endpoint</td><td style="font-family:monospace;font-size:12px">http://localhost:3000/api</td></tr>
                 <tr><td style="color:var(--text-muted);padding:8px 0">Logged in as</td><td>${user.name} ${user.surname} (${user.role})</td></tr>
               </tbody>
@@ -103,6 +103,28 @@ export async function renderSettings(container) {
               <button class="btn btn-danger btn-block" id="disconnect-btn">
                 <i class="fas fa-unlink"></i> Disconnect from Server
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoices Tab (D&D Editor) -->
+      <div class="tab-content" id="stab-invoices">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-file-invoice"></i> Invoice Designer</div>
+            <button class="btn btn-success btn-sm" id="save-template-btn"><i class="fas fa-save"></i> Save Layout</button>
+          </div>
+          <div class="card-body">
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px">Drag and reorder the sections below to customize your invoice layout.</p>
+            
+            <div id="invoice-editor-canvas" style="display:flex; flex-direction:column; gap:12px; background:var(--bg-app); padding:20px; border-radius:12px; border:2px dashed var(--border)">
+              <!-- Drag and drop items will be injected here -->
+            </div>
+
+            <div class="alert alert-warning" style="margin-top:20px">
+              <i class="fas fa-exclamation-triangle"></i>
+              <div>The changes will apply to all <strong>future</strong> PDF/Viewed invoices immediately.</div>
             </div>
           </div>
         </div>
@@ -196,10 +218,73 @@ export async function renderSettings(container) {
     catch (err) { window.mdsToast(err.message, 'error'); }
   });
 
-  // Disconnect from server
-  document.getElementById('disconnect-btn')?.addEventListener('click', () => {
-    if (confirm('Are you sure you want to disconnect from the server? All session data will be cleared.')) {
-      window.mdsDisconnect();
+  // Invoices Tab: Drag & Drop Designer
+  const canvas = document.getElementById('invoice-editor-canvas');
+  if (canvas) {
+    const blockLabels = {
+      'header': 'Clinic Header (Name, Logo, Address)',
+      'clinic_info': 'Clinic Details (Tax ID, Phone)',
+      'patient_info': 'Patient Information (Name, Address)',
+      'treatment_table': 'Treatments Table (Procedures, Prices)',
+      'totals': 'Totals Summary (Subtotal, Discount, Balance)',
+      'footer': 'Footer (Notes, Thank you message)'
+    };
+
+    let template = [];
+    async function loadTemplate() {
+      try {
+        const res = await api.settings.get('invoice_template');
+        template = res.value || ['header', 'clinic_info', 'patient_info', 'treatment_table', 'totals', 'footer'];
+        renderBlocks();
+      } catch (err) { window.mdsToast('Failed to load template', 'error'); }
     }
-  });
+
+    function renderBlocks() {
+      canvas.innerHTML = '';
+      template.forEach((block, index) => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.draggable = true;
+        div.style.padding = '12px 16px';
+        div.style.cursor = 'grab';
+        div.style.display = 'flex';
+        div.style.alignItems = 'center';
+        div.style.justifyContent = 'space-between';
+        div.dataset.index = index;
+        div.dataset.block = block;
+
+        div.innerHTML = `
+          <div class="flex items-center gap-12">
+            <i class="fas fa-bars" style="color:var(--text-muted)"></i>
+            <span style="font-weight:600">${blockLabels[block]}</span>
+          </div>
+          <span class="badge badge-primary">ID: ${block}</span>
+        `;
+
+        // D&D Events
+        div.ondragstart = (e) => { e.dataTransfer.setData('text/plain', index); div.style.opacity = '0.5'; };
+        div.ondragend = () => { div.style.opacity = '1'; };
+        div.ondragover = (e) => e.preventDefault();
+        div.ondrop = (e) => {
+          e.preventDefault();
+          const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+          const toIndex = index;
+          const item = template.splice(fromIndex, 1)[0];
+          template.splice(toIndex, 0, item);
+          renderBlocks();
+        };
+
+        canvas.appendChild(div);
+      });
+    }
+
+    document.getElementById('save-template-btn').onclick = async () => {
+      try {
+        await api.settings.update('invoice_template', template);
+        window.mdsToast('Invoice layout saved!', 'success');
+      } catch (err) { window.mdsToast(err.message, 'error'); }
+    };
+
+    loadTemplate();
+  }
 }

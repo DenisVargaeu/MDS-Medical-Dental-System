@@ -64,7 +64,16 @@ async function migrate() {
         invoice_id INT NULL,
         FOREIGN KEY (plan_id) REFERENCES mds_treatment_plans(id) ON DELETE CASCADE,
         FOREIGN KEY (treatment_id) REFERENCES mds_treatments(id) ON DELETE RESTRICT
-      ) ENGINE=InnoDB;`
+      ) ENGINE=InnoDB;`,
+
+      `CREATE TABLE IF NOT EXISTS mds_settings (
+        setting_key VARCHAR(100) PRIMARY KEY,
+        setting_value TEXT,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB;`,
+
+      `INSERT IGNORE INTO mds_settings (setting_key, setting_value) VALUES 
+       ('invoice_template', '["header", "clinic_info", "patient_info", "treatment_table", "totals", "footer"]');`
     ];
 
     for (let i = 0; i < queries.length; i++) {

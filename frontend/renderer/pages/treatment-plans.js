@@ -283,7 +283,14 @@ export async function renderTreatmentPlans(container, params = {}) {
                             <div class="flex items-center gap-4">
                               <span class="badge badge-${item.status==='completed'?'success':item.status==='skipped'?'muted':'warning'}">${item.status}</span>
                               ${item.status === 'completed' ? `
-                                <i class="fas fa-coins" style="color:${item.payment_status === 'paid' ? 'var(--success)' : 'var(--text-muted)'}; font-size:12px" title="${item.payment_status === 'paid' ? 'Paid' : 'Unpaid'}"></i>
+                                <div class="flex items-center gap-4">
+                                  <i class="fas fa-coins" style="color:${item.payment_status === 'paid' ? 'var(--success)' : 'var(--text-muted)'}; font-size:12px" title="${item.payment_status === 'paid' ? 'Paid' : 'Unpaid'}"></i>
+                                  ${item.invoice_id ? `
+                                    <button class="btn btn-xs btn-ghost print-item-invoice" data-invoice-id="${item.invoice_id}" title="Print Invoice" style="padding:2px 6px; font-size:10px">
+                                      <i class="fas fa-print"></i>
+                                    </button>
+                                  ` : ''}
+                                </div>
                               ` : ''}
                             </div>
                             ${isManagement && plan.status === 'active' ? `
@@ -313,6 +320,11 @@ export async function renderTreatmentPlans(container, params = {}) {
       `;
 
       document.body.appendChild(modal);
+
+      // Print Handlers
+      modal.querySelectorAll('.print-item-invoice').forEach(btn => {
+        btn.onclick = () => window.mdsRenderInvoiceModal(btn.dataset.invoiceId);
+      });
 
       // Status Handlers
       modal.querySelectorAll('.update-item-status').forEach(btn => {

@@ -401,4 +401,16 @@ CREATE TABLE IF NOT EXISTS mds_treatment_plan_items (
   FOREIGN KEY (treatment_id) REFERENCES mds_treatments(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
+-- ============================================================
+-- SYSTEM SETTINGS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS mds_settings (
+  setting_key VARCHAR(100) PRIMARY KEY,
+  setting_value TEXT,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO mds_settings (setting_key, setting_value) VALUES 
+('invoice_template', '["header", "clinic_info", "patient_info", "treatment_table", "totals", "footer"]');
+
 SET foreign_key_checks = 1;

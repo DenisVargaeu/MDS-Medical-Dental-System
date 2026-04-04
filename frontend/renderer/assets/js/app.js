@@ -297,4 +297,153 @@ window.mdsDisconnect = () => {
   showPairing();
 };
 
+/**
+ * Global Invoice Generator (v1.4.0)
+ * Renders a professional, printable invoice based on the saved layout template.
+ */
+window.mdsRenderInvoiceModal = async (id) => {
+  const data = await api.finance.getInvoice(id).catch(e => toast(e.message, 'error'));
+  if (!data) return;
+  const { invoice, items } = data;
+  
+  // Fetch Template from Settings
+  const { value: template } = await api.settings.get('invoice_template').catch(() => ({ value: ['header', 'clinic_info', 'patient_info', 'treatment_table', 'totals', 'footer'] }));
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop open';
+  modal.id = 'global-invoice-modal';
+  modal.innerHTML = `
+    <div class="modal modal-xl" style="background:#f0f2f5; height:90vh !important; display:flex; flex-direction:column">
+      <div class="modal-header">
+        <div class="modal-title" style="display:flex; align-items:center; gap:12px">
+          <i class="fas fa-file-invoice-dollar" style="color:var(--primary)"></i>
+          <span>Invoice No. ${invoice.invoice_number}</span>
+          <span class="badge badge-${invoice.status==='paid'?'success':'warning'}" style="margin-left:8px">${invoice.status.toUpperCase()}</span>
+        </div>
+        <div class="flex gap-12">
+          <button class="btn btn-primary btn-sm" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+          <div class="modal-close" onclick="this.closest('.modal-backdrop').remove()"><i class="fas fa-times"></i></div>
+        </div>
+      </div>
+      <div class="modal-body" style="background:#f0f2f5; display:flex; justify-content:center; padding:40px; overflow-y:auto; flex:1">
+        <!-- The printable invoice page -->
+        <style>
+          @media print {
+            body * { visibility: hidden; }
+            #printable-invoice, #printable-invoice * { visibility: visible; }
+            #printable-invoice { position: absolute; left: 0; top: 0; width: 100% !important; margin: 0 !important; padding: 10mm !important; box-shadow: none !important; }
+            .modal-backdrop { background: none !important; }
+            .modal-header, .modal-footer { display: none !important; }
+          }
+        </style>
+        <div id="printable-invoice" style="width:210mm; min-height:297mm; background:#fff; padding:25mm; box-shadow:0 10px 30px rgba(0,0,0,0.1); font-family: 'Inter', system-ui, sans-serif; color:#2d3748">
+          ${template.map(block => {
+            if (block === 'header') return `
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:40px">
+                <div>
+                  <div style="background:var(--primary); color:#fff; padding:10px 20px; border-radius:8px; font-weight:800; font-size:24px; display:inline-block">MDS</div>
+                  <h1 style="font-size:32px; font-weight:900; margin-top:16px; letter-spacing:-1px; color:#1a202c">INVOICE</h1>
+                  <div style="font-size:12px; color:#718096; margin-top:4px">Medical Dental System (Faktúra)</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:12px; color:#a0aec0; text-transform:uppercase; font-weight:700">Invoice Number</div>
+                  <div style="font-size:16px; font-weight:800; color:#2d3748">#${invoice.invoice_number}</div>
+                  <div style="margin-top:12px; font-size:12px; color:#a0aec0; text-transform:uppercase; font-weight:700">Issue Date</div>
+                  <div style="font-size:14px; font-weight:600">${new Date(invoice.issue_date).toLocaleDateString('sk-SK')}</div>
+                </div>
+              </div>`;
+            
+            if (block === 'clinic_info') return `
+              <div style="margin-bottom:40px; display:grid; grid-template-columns:1fr 1fr; gap:40px">
+                <div>
+                  <div style="font-size:11px; color:#a0aec0; text-transform:uppercase; font-weight:700; border-bottom:1px solid #edf2f7; padding-bottom:4px; margin-bottom:12px">Clinic Details (Dodávateľ)</div>
+                  <div style="font-weight:700; font-size:15px; color:#1a202c">Medical Dental System Ltd.</div>
+                  <div style="font-size:13px; color:#4a5568; line-height:1.6">Main St. 123, 811 01 Bratislava<br>Slovak Republic<br>ICO: 12345678 | DIC: 2021123456</div>
+                </div>
+                <div>
+                  <div style="font-size:11px; color:#a0aec0; text-transform:uppercase; font-weight:700; border-bottom:1px solid #edf2f7; padding-bottom:4px; margin-bottom:12px">Contact</div>
+                  <div style="font-size:13px; color:#4a5568; line-height:1.6">Phone: +421 900 000 000<br>Email: dental@mds.sk<br>Website: www.mds-medical.sk</div>
+                </div>
+              </div>`;
+            
+            if (block === 'patient_info') return `
+              <div style="margin-bottom:40px; background:#f7fafc; padding:24px; border-radius:12px; border:1px solid #e2e8f0; display:grid; grid-template-columns:3fr 1fr; gap:20px">
+                <div>
+                  <div style="font-size:11px; color:#a0aec0; text-transform:uppercase; font-weight:700; margin-bottom:8px">Received By (Odberateľ)</div>
+                  <div style="font-size:18px; font-weight:800; color:#1a202c">${invoice.first_name} ${invoice.last_name}</div>
+                  <div style="font-size:13px; color:#4a5568; margin-top:4px">${invoice.address || 'Address not listed'}</div>
+                  <div style="font-size:13px; color:#4a5568">${invoice.phone || ''}</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:11px; color:#a0aec0; text-transform:uppercase; font-weight:700; margin-bottom:8px">Patient ID</div>
+                  <div style="font-size:16px; font-weight:700; color:#2d3748">#${invoice.patient_id}</div>
+                </div>
+              </div>`;
+            
+            if (block === 'treatment_table') return `
+              <div style="margin-bottom:40px">
+                <table style="width:100%; border-collapse:collapse">
+                  <thead>
+                    <tr style="background:#f8fafc; border-bottom:2px solid #edf2f7">
+                      <th style="padding:14px; text-align:left; font-size:11px; font-weight:800; color:#a0aec0; text-transform:uppercase">Description</th>
+                      <th style="padding:14px; text-align:center; font-size:11px; font-weight:800; color:#a0aec0; text-transform:uppercase">Qty</th>
+                      <th style="padding:14px; text-align:right; font-size:11px; font-weight:800; color:#a0aec0; text-transform:uppercase">Price</th>
+                      <th style="padding:14px; text-align:right; font-size:11px; font-weight:800; color:#a0aec0; text-transform:uppercase">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${items.map(i => `
+                      <tr style="border-bottom:1px solid #edf2f7">
+                        <td style="padding:14px; font-size:14px">
+                          <div style="font-weight:700; color:#2d3748">${i.treatment_name}</div>
+                          <div style="font-size:11px; color:#a0aec0; margin-top:2px">${i.tooth_number ? `Tooth: ${i.tooth_number}` : 'General Dental Procedure'}</div>
+                        </td>
+                        <td style="padding:14px; text-align:center; font-size:14px; color:#4a5568">${i.quantity}</td>
+                        <td style="padding:14px; text-align:right; font-size:14px; color:#4a5568">€${parseFloat(i.unit_price).toFixed(2)}</td>
+                        <td style="padding:14px; text-align:right; font-size:14px; font-weight:700; color:#2d3748">€${parseFloat(i.total_price).toFixed(2)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>`;
+            
+            if (block === 'totals') return `
+              <div style="display:flex; justify-content:flex-end">
+                <div style="width:280px">
+                  <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #edf2f7; font-size:14px">
+                    <span style="color:#718096">Subtotal:</span>
+                    <span style="font-weight:600">€${parseFloat(invoice.subtotal).toFixed(2)}</span>
+                  </div>
+                  ${invoice.discount_amount > 0 ? `
+                  <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #edf2f7; font-size:14px; color:var(--success)">
+                    <span>Discount (${invoice.discount_percent}%):</span>
+                    <span style="font-weight:600">-€${parseFloat(invoice.discount_amount).toFixed(2)}</span>
+                  </div>` : ''}
+                  <div style="display:flex; justify-content:space-between; padding:20px 0; font-size:24px; font-weight:900; color:var(--primary)">
+                    <span>TOTAL:</span>
+                    <span>€${parseFloat(invoice.total).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>`;
+            
+            if (block === 'footer') return `
+              <div style="margin-top:80px; padding-top:24px; border-top:2px solid #edf2f7; display:grid; grid-template-columns:2fr 1fr; gap:40px">
+                <div>
+                  <div style="font-size:11px; color:#a0aec0; text-transform:uppercase; font-weight:700; margin-bottom:8px">Clinic Notes & Signature</div>
+                  <p style="font-size:13px; color:#718096; line-height:1.6">${invoice.notes || 'Please pay by bank transfer or at the reception. Thank you for your visit!'}</p>
+                </div>
+                <div style="text-align:right; font-size:13px; color:#718096">
+                  <div style="margin-top:40px; font-style:italic">Physician\\'s Signature</div>
+                  <div style="margin-top:12px; border-top:1px solid #edf2f7; display:inline-block; width:150px"></div>
+                </div>
+              </div>`;
+            return '';
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+};
+
 boot();

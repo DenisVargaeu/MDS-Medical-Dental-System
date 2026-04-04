@@ -35,6 +35,7 @@ app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/odontogram', require('./routes/odontogram'));
 app.use('/api/logs', require('./routes/logs'));
 app.use('/api/treatment-plans', require('./routes/treatment-plans'));
+app.use('/api/settings', require('./routes/settings'));
 
 // Health check
 app.get('/api/health', (req, res) => {

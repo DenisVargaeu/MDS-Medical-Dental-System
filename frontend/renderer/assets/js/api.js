@@ -195,3 +195,9 @@ export const treatmentPlans = {
   updateStatus: (id, status) => request('PATCH', `/treatment-plans/${id}/status`, { status }),
   updateItemStatus: (id, itemId, status, payment_action = null) => request('PATCH', `/treatment-plans/${id}/items/${itemId}/status`, { status, payment_action }),
 };
+
+// ── Settings ──────────────────────────────────────────────────────
+export const settings = {
+  get: (key) => request('GET', `/settings/${key}`),
+  update: (key, value) => request('PUT', `/settings/${key}`, { value }),
+};
