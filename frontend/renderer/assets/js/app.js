@@ -306,8 +306,9 @@ window.mdsRenderInvoiceModal = async (id) => {
   if (!data) return;
   const { invoice, items } = data;
   
-  // Fetch Template from Settings
+  // Fetch Template and Clinic Info from Settings
   const { value: template } = await api.settings.get('invoice_template').catch(() => ({ value: ['header', 'clinic_info', 'patient_info', 'treatment_table', 'totals', 'footer'] }));
+  const { value: clinicInfo } = await api.settings.get('clinic_info').catch(() => ({ value: {} }));
 
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop open';
@@ -343,7 +344,7 @@ window.mdsRenderInvoiceModal = async (id) => {
                 <div>
                   <div style="background:var(--primary); color:#fff; padding:10px 20px; border-radius:8px; font-weight:800; font-size:24px; display:inline-block">MDS</div>
                   <h1 style="font-size:32px; font-weight:900; margin-top:16px; letter-spacing:-1px; color:#1a202c">INVOICE</h1>
-                  <div style="font-size:12px; color:#718096; margin-top:4px">Medical Dental System (Faktúra)</div>
+                  <div style="font-size:12px; color:#718096; margin-top:4px">${clinicInfo.name || 'Medical Dental System'} (Faktúra)</div>
                 </div>
                 <div style="text-align:right">
                   <div style="font-size:12px; color:#a0aec0; text-transform:uppercase; font-weight:700">Invoice Number</div>
@@ -357,12 +358,20 @@ window.mdsRenderInvoiceModal = async (id) => {
               <div style="margin-bottom:40px; display:grid; grid-template-columns:1fr 1fr; gap:40px">
                 <div>
                   <div style="font-size:11px; color:#a0aec0; text-transform:uppercase; font-weight:700; border-bottom:1px solid #edf2f7; padding-bottom:4px; margin-bottom:12px">Clinic Details (Dodávateľ)</div>
-                  <div style="font-weight:700; font-size:15px; color:#1a202c">Medical Dental System Ltd.</div>
-                  <div style="font-size:13px; color:#4a5568; line-height:1.6">Main St. 123, 811 01 Bratislava<br>Slovak Republic<br>ICO: 12345678 | DIC: 2021123456</div>
+                  <div style="font-weight:700; font-size:15px; color:#1a202c">${clinicInfo.name || 'Medical Dental System'}</div>
+                  <div style="font-size:13px; color:#4a5568; line-height:1.6">
+                    ${clinicInfo.address || 'Address not set'}<br>
+                    ${clinicInfo.city || ''} ${clinicInfo.country || ''}<br>
+                    IČO: ${clinicInfo.ico || '-'} | DIČ: ${clinicInfo.dic || '-'}
+                  </div>
                 </div>
                 <div>
                   <div style="font-size:11px; color:#a0aec0; text-transform:uppercase; font-weight:700; border-bottom:1px solid #edf2f7; padding-bottom:4px; margin-bottom:12px">Contact</div>
-                  <div style="font-size:13px; color:#4a5568; line-height:1.6">Phone: +421 900 000 000<br>Email: dental@mds.sk<br>Website: www.mds-medical.sk</div>
+                  <div style="font-size:13px; color:#4a5568; line-height:1.6">
+                    Phone: ${clinicInfo.phone || '-'}<br>
+                    Email: ${clinicInfo.email || '-'}<br>
+                    Website: ${clinicInfo.website || '-'}
+                  </div>
                 </div>
               </div>`;
             

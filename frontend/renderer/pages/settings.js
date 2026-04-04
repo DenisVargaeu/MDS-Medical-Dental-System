@@ -110,9 +110,30 @@ export async function renderSettings(container) {
 
       <!-- Invoices Tab (D&D Editor) -->
       <div class="tab-content" id="stab-invoices">
+        <div class="card" style="margin-bottom:24px">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-clinic-medical"></i> Clinic Details (Základné údaje)</div>
+            <button class="btn btn-primary btn-sm" id="save-clinic-details-btn"><i class="fas fa-save"></i> Save Clinic Info</button>
+          </div>
+          <div class="card-body">
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px">Update your clinic's info used in headers and invoices.</p>
+            <div class="form-grid form-grid-3">
+              <div class="form-group"><label class="form-label">Clinic Name</label><input class="form-control" id="cl-name"></div>
+              <div class="form-group"><label class="form-label">Phone</label><input class="form-control" id="cl-phone"></div>
+              <div class="form-group"><label class="form-label">Email</label><input class="form-control" id="cl-email"></div>
+              <div class="form-group"><label class="form-label">Address</label><input class="form-control" id="cl-address"></div>
+              <div class="form-group"><label class="form-label">City/ZIP</label><input class="form-control" id="cl-city"></div>
+              <div class="form-group"><label class="form-label">Country</label><input class="form-control" id="cl-country"></div>
+              <div class="form-group"><label class="form-label">IČO (ID)</label><input class="form-control" id="cl-ico"></div>
+              <div class="form-group"><label class="form-label">DIČ (Tax ID)</label><input class="form-control" id="cl-dic"></div>
+              <div class="form-group"><label class="form-label">Website</label><input class="form-control" id="cl-web"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header">
-            <div class="card-title"><i class="fas fa-file-invoice"></i> Invoice Designer</div>
+            <div class="card-title"><i class="fas fa-file-invoice"></i> Invoice Designer (Rozloženie)</div>
             <button class="btn btn-success btn-sm" id="save-template-btn"><i class="fas fa-save"></i> Save Layout</button>
           </div>
           <div class="card-body">
@@ -286,5 +307,45 @@ export async function renderSettings(container) {
     };
 
     loadTemplate();
+  }
+
+  // Clinic Details Logic (v1.4.1)
+  const saveClinicBtn = document.getElementById('save-clinic-details-btn');
+  if (saveClinicBtn) {
+    async function loadClinicInfo() {
+      try {
+        const res = await api.settings.get('clinic_info');
+        const info = res.value || {};
+        document.getElementById('cl-name').value = info.name || '';
+        document.getElementById('cl-phone').value = info.phone || '';
+        document.getElementById('cl-email').value = info.email || '';
+        document.getElementById('cl-address').value = info.address || '';
+        document.getElementById('cl-city').value = info.city || '';
+        document.getElementById('cl-country').value = info.country || '';
+        document.getElementById('cl-ico').value = info.ico || '';
+        document.getElementById('cl-dic').value = info.dic || '';
+        document.getElementById('cl-web').value = info.website || '';
+      } catch (err) { console.error('Failed to load clinic info', err); }
+    }
+
+    saveClinicBtn.onclick = async () => {
+      const info = {
+        name: document.getElementById('cl-name').value,
+        phone: document.getElementById('cl-phone').value,
+        email: document.getElementById('cl-email').value,
+        address: document.getElementById('cl-address').value,
+        city: document.getElementById('cl-city').value,
+        country: document.getElementById('cl-country').value,
+        ico: document.getElementById('cl-ico').value,
+        dic: document.getElementById('cl-dic').value,
+        website: document.getElementById('cl-web').value,
+      };
+      try {
+        await api.settings.update('clinic_info', info);
+        window.mdsToast('Clinic info saved!', 'success');
+      } catch (err) { window.mdsToast(err.message, 'error'); }
+    };
+
+    loadClinicInfo();
   }
 }
