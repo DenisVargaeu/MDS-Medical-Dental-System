@@ -96,6 +96,14 @@ export async function renderSettings(container) {
               <span class="alert-icon"><i class="fas fa-info-circle"></i></span>
               <span>Configure the database connection in <code style="font-family:monospace;background:var(--bg-app);padding:1px 4px;border-radius:4px">backend/.env</code></span>
             </div>
+
+            <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);max-width:400px">
+              <h4 style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:8px">Danger Zone</h4>
+              <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Unpairing will disconnect this device from the server. You will need the pairing PIN and server IP to connect again.</p>
+              <button class="btn btn-danger btn-block" id="disconnect-btn">
+                <i class="fas fa-unlink"></i> Disconnect from Server
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -186,5 +194,12 @@ export async function renderSettings(container) {
     if (!cur || !nw) { window.mdsToast('Both fields required', 'error'); return; }
     try { await api.auth.changePassword(cur, nw); window.mdsToast('Password updated', 'success'); }
     catch (err) { window.mdsToast(err.message, 'error'); }
+  });
+
+  // Disconnect from server
+  document.getElementById('disconnect-btn')?.addEventListener('click', () => {
+    if (confirm('Are you sure you want to disconnect from the server? All session data will be cleared.')) {
+      window.mdsDisconnect();
+    }
   });
 }

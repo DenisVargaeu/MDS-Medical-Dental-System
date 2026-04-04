@@ -6,7 +6,8 @@ export async function renderTreatments(container) {
 
   async function load() {
     const resp = await api.treatments.list();
-    treatments = resp.data || [];
+    // Support both wrapped {data:[]} and direct [] responses
+    treatments = Array.isArray(resp) ? resp : (resp.data || []);
     categories = [...new Set(treatments.map(t => t.category).filter(Boolean))].sort();
     render();
   }

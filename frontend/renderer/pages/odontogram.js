@@ -2,9 +2,10 @@ import * as api from '../assets/js/api.js';
 
 export async function renderOdontogram(container, patientId) {
   try {
-    const toothData = await api.client(`/odontogram/${patientId}`);
+    const toothDataRaw = await api.client(`/odontogram/${patientId}`) || [];
+    const toothData = Array.isArray(toothDataRaw) ? toothDataRaw : (toothDataRaw.data || []);
     const dataMap = {};
-    toothData.forEach(t => dataMap[t.tooth_number] = t);
+    toothData.forEach(t => { if (t && t.tooth_number) dataMap[t.tooth_number] = t; });
 
     const states = {
       healthy:   { label: 'Healthy', color: '#10b981', icon: 'check-circle' },
@@ -30,6 +31,32 @@ export async function renderOdontogram(container, patientId) {
         </div>
 
         <div class="odontogram-grid">
+          <style>
+            .odontogram-wrapper { padding: 20px; background: var(--bg-card); border-radius: 20px; }
+            .odontogram-grid { display: flex; flex-direction: column; gap: 40px; align-items: center; padding: 20px 0; }
+            .jaw { display: flex; gap: 20px; }
+            .tooth-row { display: flex; gap: 4px; }
+            
+            .tooth { position: relative; width: 44px; height: 64px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s, filter 0.2s; }
+            .tooth:hover { transform: scale(1.15); z-index: 10; filter: drop-shadow(0 0 8px var(--primary-ghost)); }
+            .tooth-number { font-size: 10px; font-weight: 800; color: var(--text-muted); margin-bottom: 2px; }
+            
+            .tooth-body { width: 32px; height: 38px; background: #fff; border: 2px solid #e2e8f0; border-radius: 8px 8px 12px 12px; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.05); }
+            .tooth.affected .tooth-body { border-color: currentColor; background: #fafafa; }
+            
+            .tooth-icon { font-size: 16px; }
+            .tooth.pulse.affected .tooth-icon { animation: tooth-pulse 2s infinite; }
+            
+            @keyframes tooth-pulse {
+              0% { transform: scale(1); opacity: 1; }
+              50% { transform: scale(1.2); opacity: 0.8; }
+              100% { transform: scale(1); opacity: 1; }
+            }
+            
+            .tooth-status-indicator { width: 100%; height: 4px; border-radius: 2px; margin-top: 6px; }
+            
+            .tooth-edit-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-xl); padding: 24px; border-radius: 16px; z-index: 1000; width: 340px; }
+          </style>
           <!-- Upper Jaw (18-11, 21-28) -->
           <div class="jaw upper">
             <div class="tooth-row quadrant-1">
@@ -77,10 +104,20 @@ export async function renderOdontogram(container, patientId) {
 function renderTooth(number, data, states) {
   const state = data?.state || 'healthy';
   const color = states[state].color;
+  const isHealthy = state === 'healthy';
+  
   return `
-    <div class="tooth" data-number="${number}" data-state="${state}" title="Tooth #${number} - ${states[state].label}">
+    <div class="tooth ${isHealthy ? '' : 'affected pulse'}" data-number="${number}" data-state="${state}" title="Tooth #${number} - ${states[state].label}">
       <div class="tooth-number">${number}</div>
-      <div class="tooth-icon" style="color:${color}"><i class="fas fa-tooth"></i></div>
+      <div class="tooth-body">
+        <div class="tooth-upper"></div>
+        <div class="tooth-middle">
+          <div class="tooth-icon" style="color:${color}">
+            <i class="fas fa-${states[state].icon}"></i>
+          </div>
+        </div>
+        <div class="tooth-lower"></div>
+      </div>
       <div class="tooth-status-indicator" style="background:${color}"></div>
     </div>
   `;

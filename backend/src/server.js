@@ -8,15 +8,7 @@ const PORT = process.env.PORT || 3000;
 
 // ── Middleware ──────────────────────────────────────────────
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
-    // Allow localhost and file://
-    if (origin.startsWith('http://localhost') || origin.startsWith('file://')) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
+  origin: true, // Allow all origins for the local system to support network pairing
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -29,19 +21,20 @@ const uploadDir = path.resolve(process.env.UPLOAD_DIR || './uploads');
 app.use('/uploads', express.static(uploadDir));
 
 // ── Routes ──────────────────────────────────────────────────
-app.use('/api/auth',          require('./routes/auth'));
-app.use('/api/patients',      require('./routes/patients'));
-app.use('/api/appointments',  require('./routes/appointments'));
-app.use('/api/treatments',    require('./routes/treatments'));
-app.use('/api/records',       require('./routes/records'));
-app.use('/api/finance',       require('./routes/finance'));
-app.use('/api/files',         require('./routes/files'));
-app.use('/api/dashboard',     require('./routes/dashboard'));
-app.use('/api/users',         require('./routes/users'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/patients', require('./routes/patients'));
+app.use('/api/appointments', require('./routes/appointments'));
+app.use('/api/treatments', require('./routes/treatments'));
+app.use('/api/records', require('./routes/records'));
+app.use('/api/finance', require('./routes/finance'));
+app.use('/api/files', require('./routes/files'));
+app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/users', require('./routes/users'));
 app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/inventory',     require('./routes/inventory'));
-app.use('/api/odontogram',    require('./routes/odontogram'));
-app.use('/api/logs',          require('./routes/logs'));
+app.use('/api/inventory', require('./routes/inventory'));
+app.use('/api/odontogram', require('./routes/odontogram'));
+app.use('/api/logs', require('./routes/logs'));
+app.use('/api/treatment-plans', require('./routes/treatment-plans'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -60,12 +53,12 @@ app.use((err, req, res, next) => {
 // ── Start ───────────────────────────────────────────────────
 const { getServerInfo, ensurePairingCode } = require('./utils/pairing');
 
-app.listen(PORT, async () => {
+app.listen(PORT, '0.0.0.0', async () => {
   const { hostname, ip } = getServerInfo();
   const pairingCode = await ensurePairingCode();
 
   console.log(`\n╔════════════════════════════════════════╗`);
-  console.log(`║  MDS API Server running on :${PORT}     ║`);
+  console.log(`║  MDS API Server running on :${PORT}       ║`);
   console.log(`╟────────────────────────────────────────╢`);
   console.log(`║  HOSTNAME: ${hostname.padEnd(27, ' ')} ║`);
   console.log(`║  IP ADDR:  ${ip.padEnd(27, ' ')} ║`);

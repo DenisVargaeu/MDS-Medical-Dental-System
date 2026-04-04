@@ -107,4 +107,15 @@ router.post('/verify-pairing', async (req, res) => {
   }
 });
 
+// GET /api/auth/pairing-status/:code
+router.get('/pairing-status/:code', async (req, res) => {
+  const { code } = req.params;
+  try {
+    const isValid = await verifyPairingCode(code);
+    res.json({ valid: isValid });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

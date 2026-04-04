@@ -64,6 +64,10 @@ ipcMain.handle('app:version', () => app.getVersion());
 
 // ── App Lifecycle ────────────────────────────────────────────
 
+// Disable hardware acceleration to resolve VSync and GLib errors on some Linux distributions
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-software-rasterizer');
+
 app.whenReady().then(() => {
   createWindow();
   app.on('activate', () => {

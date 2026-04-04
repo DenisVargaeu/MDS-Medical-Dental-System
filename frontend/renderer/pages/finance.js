@@ -145,8 +145,9 @@ export async function renderFinance(container, params = {}) {
     if (to) qp.to = to;
 
     try {
-      const data = await api.finance.invoices(qp);
-      const invs = data.data;
+      const resp = await api.finance.invoices(qp);
+      // Support both wrapped {data:[]} and direct [] responses
+      const invs = Array.isArray(resp) ? resp : (resp.data || []);
       const statusCls = { paid:'badge-success', issued:'badge-primary', partial:'badge-warning', overdue:'badge-danger', draft:'badge-muted', cancelled:'badge-muted' };
 
       if (invs.length === 0) {

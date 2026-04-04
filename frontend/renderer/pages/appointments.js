@@ -84,14 +84,148 @@ export async function renderAppointments(container, params = {}) {
     btnCal.className = `btn btn-secondary ${viewMode==='calendar'?'btn-primary':''}`;
     
     if (viewMode === 'calendar') {
-      renderCalendar(document.getElementById('appts-container'));
+      await renderCalendar(document.getElementById('appts-container'));
     } else {
       loadAppointments();
     }
   }
 
   async function renderCalendar(calContainer) {
-    calContainer.innerHTML = `<div class="card" style="padding:40px;text-align:center"><div style="font-size:48px;color:var(--primary-ghost);margin-bottom:16px"><i class="fas fa-calendar-alt"></i></div><h3>Weekly Calendar View</h3><p>Visual scheduling grid coming in the next update. Using List view for now.</p><button class="btn btn-secondary" onclick="document.getElementById('view-list').click()">Back to List</button></div>`;
+    calContainer.innerHTML = `<div class="loading-overlay"><div class="spinner"></div></div>`;
+    
+    // Calculate week range based on filterDate (Safely parse local date)
+    const current = new Date(filterDate + 'T00:00:00');
+    const dayOfWeek = current.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(current);
+      d.setDate(current.getDate() + diffToMonday + i);
+      weekDays.push(d);
+    }
+
+    const startOfWeek = weekDays[0].toISOString().split('T')[0];
+    const endOfWeek = weekDays[6].toISOString().split('T')[0];
+
+    try {
+      const data = await api.appointments.list({ 
+        from: startOfWeek, 
+        to: endOfWeek,
+        doctor_id: document.getElementById('filter-doctor').value
+      });
+      const appts = data.data || [];
+
+      const hours = [];
+      for (let i = 7; i <= 21; i++) hours.push(i);
+
+      calContainer.innerHTML = `
+        <div class="calendar-wrapper card">
+          <div class="calendar-header-grid">
+            <div class="time-col-header">Time</div>
+            ${weekDays.map(d => {
+              const dISO = d.toISOString().split('T')[0];
+              const isToday = dISO === new Date().toISOString().split('T')[0];
+              return `
+                <div class="day-col-header ${isToday ? 'today' : ''}">
+                  <div class="day-name">${d.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                  <div class="day-num">${d.getDate()}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          <div class="calendar-body-grid">
+            <!-- Time Column -->
+            <div class="time-column">
+              ${hours.map(h => `<div class="time-slot-label">${h}:00</div>`).join('')}
+            </div>
+            <!-- Days Grid -->
+            <div class="days-grid-container">
+              ${weekDays.map(d => {
+                const dayISO = d.toISOString().split('T')[0];
+                const dayAppts = appts.filter(a => {
+                  const aDate = (typeof a.date === 'string' && a.date.includes('T')) ? a.date.split('T')[0] : a.date;
+                  return aDate === dayISO;
+                });
+
+                return `
+                <div class="day-column" data-date="${dayISO}">
+                  ${hours.map(h => `
+                    <div class="time-slot" data-time="${h.toString().padStart(2, '0')}:00"></div>
+                    <div class="time-slot" data-time="${h.toString().padStart(2, '0')}:30"></div>
+                  `).join('')}
+                  <!-- Appointments Overlay -->
+                  ${dayAppts.map(a => {
+                    const [h, m] = a.time.split(':').map(Number);
+                    if (h < 7 || h > 21) return ''; // Skip off-grid appts in view but keep them in data
+                    const top = ((h - 7) * 2 + (m >= 30 ? 1 : 0)) * 40; 
+                    const height = (a.duration_minutes / 30) * 40;
+                    const statusClass = a.status.replace('_', '-');
+                    return `
+                      <div class="cal-appt ${statusClass}" 
+                           style="top:${top}px; height:${height-2}px" 
+                           onclick="event.stopPropagation(); mdsNavigateTo('clinical-session', { appointmentId: ${a.id}, patientId: ${a.patient_id} })">
+                        <div class="cal-appt-time">${a.time.slice(0,5)}</div>
+                        <div class="cal-appt-patient">${a.first_name} ${a.last_name}</div>
+                        <div class="cal-appt-type">${a.type || 'Treatment'}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <style>
+          .calendar-wrapper { padding: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border); }
+          .calendar-header-grid { display: grid; grid-template-columns: 60px repeat(7, 1fr); border-bottom: 1px solid var(--border); background: var(--bg-app); }
+          .time-col-header { padding: 12px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; display: flex; align-items: flex-end; justify-content: center; border-right: 1px solid var(--border); }
+          .day-col-header { padding: 12px; text-align: center; border-right: 1px solid var(--border); }
+          .day-col-header.today { background: var(--primary-ghost); color: var(--primary); }
+          .day-name { font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; opacity: 0.7; }
+          .day-num { font-size: 20px; font-weight: 700; }
+          
+          .calendar-body-grid { display: grid; grid-template-columns: 60px 1fr; height: 640px; overflow-y: auto; position: relative; }
+          .time-column { border-right: 1px solid var(--border); background: var(--bg-app); }
+          .time-slot-label { height: 80px; display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; font-size: 11px; color: var(--text-muted); border-bottom: 1px solid var(--border-light); }
+          
+          .days-grid-container { display: grid; grid-template-columns: repeat(7, 1fr); position: relative; background-image: linear-gradient(var(--border-light) 1px, transparent 1px); background-size: 100% 40px; }
+          .day-column { position: relative; border-right: 1px solid var(--border-light); height: 1200px; }
+          .time-slot { height: 40px; cursor: pointer; transition: background 0.2s; }
+          .time-slot:hover { background: var(--primary-ghost); }
+          
+          .cal-appt { position: absolute; left: 4px; right: 4px; border-radius: 6px; padding: 6px; font-size: 11px; color: white; cursor: pointer; z-index: 10; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 4px solid rgba(255,255,255,0.3); transition: transform 0.2s; }
+          .cal-appt:hover { transform: scale(1.02); z-index: 20; }
+          
+          .cal-appt.scheduled { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+          .cal-appt.confirmed { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+          .cal-appt.in-progress { background: linear-gradient(135deg, #f59e0b, #d97706); }
+          .cal-appt.completed { background: linear-gradient(135deg, #10b981, #059669); }
+          .cal-appt.cancelled { background: linear-gradient(135deg, #94a3b8, #64748b); opacity: 0.7; }
+          .cal-appt.no-show { background: linear-gradient(135deg, #ef4444, #dc2626); }
+          
+          .cal-appt-time { font-weight: 700; margin-bottom: 2px; }
+          .cal-appt-patient { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+          .cal-appt-type { opacity: 0.8; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        </style>
+      `;
+
+      // Add click listener for new appt
+      calContainer.querySelectorAll('.time-slot').forEach(slot => {
+        slot.addEventListener('click', () => {
+          const date = slot.parentElement.dataset.date;
+          const time = slot.dataset.time;
+          document.getElementById('appt-date').value = date;
+          document.getElementById('appt-time').value = time;
+          openApptModal();
+        });
+      });
+
+    } catch (err) {
+      calContainer.innerHTML = `<div class="alert alert-error">Error loading calendar: ${err.message}</div>`;
+    }
   }
 
   async function loadAppointments() {
@@ -107,8 +241,9 @@ export async function renderAppointments(container, params = {}) {
     if (params.patientId) queryParams.patient_id = params.patientId;
 
     try {
-      const data = await api.appointments.list(queryParams);
-      const appts = data.data;
+      const resp = await api.appointments.list(queryParams);
+      // Support both wrapped {data:[]} and direct [] responses
+      const appts = Array.isArray(resp) ? resp : (resp.data || []);
       const statusColors = { scheduled:'badge-primary', confirmed:'badge-info', in_progress:'badge-warning', completed:'badge-success', cancelled:'badge-muted', no_show:'badge-danger' };
 
       if (appts.length === 0) {
@@ -122,8 +257,12 @@ export async function renderAppointments(container, params = {}) {
           <table>
             <thead><tr><th>Date</th><th>Time</th><th>Duration</th><th>Patient</th><th>Doctor</th><th>Type</th><th>Status</th><th>Alerts</th><th>Actions</th></tr></thead>
             <tbody>
-              ${appts.map(a => `<tr>
-                <td><strong>${new Date(a.date+'T00:00:00').toLocaleDateString('sk-SK', {weekday:'short',month:'short',day:'numeric'})}</strong></td>
+              ${appts.map(a => {
+                const dStr = typeof a.date === 'string' && a.date.includes('T') ? a.date.split('T')[0] : a.date;
+                const formattedDate = new Date(dStr + 'T00:00:00').toLocaleDateString('sk-SK', {weekday:'short',month:'short',day:'numeric'});
+                
+                return `<tr>
+                <td><strong>${formattedDate}</strong></td>
                 <td style="font-family:monospace;font-weight:600">${a.time?.slice(0,5)}</td>
                 <td style="color:var(--text-muted)">${a.duration_minutes}min</td>
                 <td>
@@ -134,20 +273,24 @@ export async function renderAppointments(container, params = {}) {
                 </td>
                 <td>Dr. ${a.doctor_name} ${a.doctor_surname}</td>
                 <td>${a.type || '—'}</td>
-                <td><span class="badge ${statusColors[a.status]||'badge-muted'}" style="margin-bottom:4px">${a.status}</span>
-                  <select class="form-control form-select btn-sm appt-status-select" data-id="${a.id}" style="padding:2px 4px;font-size:10px">
-                    ${['scheduled','confirmed','in_progress','completed','cancelled','no_show'].map(s => `<option value="${s}" ${a.status===s?'selected':''}>${s}</option>`).join('')}
-                  </select>
+                <td>
+                  <div style="display:flex;flex-direction:column;gap:4px">
+                    <span class="badge ${statusColors[a.status]||'badge-muted'}">${a.status}</span>
+                    <select class="form-control form-select btn-sm appt-status-select" data-id="${a.id}" style="padding:2px 4px;font-size:10px;height:24px">
+                      ${['scheduled','confirmed','in_progress','completed','cancelled','no_show'].map(s => `<option value="${s}" ${a.status===s?'selected':''}>${s}</option>`).join('')}
+                    </select>
+                  </div>
                 </td>
                 <td>${a.warning_flags ? `<span class="badge badge-danger" title="${a.warning_flags}"><i class="fas fa-exclamation-triangle"></i></span>` : ''}</td>
                 <td>
                   <div style="display:flex;gap:4px">
-                    ${isDoctor ? `<button class="btn btn-sm ${a.status==='completed'?'btn-secondary':'btn-success'} open-session-btn" data-id="${a.id}" data-patient-id="${a.patient_id}" title="Clinical Session"><i class="fas fa-microscope"></i> Session</button>` : ''}
+                    ${isDoctor ? `<button class="btn btn-sm ${a.status==='completed'?(a.type==='Follow-up'?'btn-info':'btn-secondary'):'btn-success'} open-session-btn" data-id="${a.id}" data-patient-id="${a.patient_id}" title="Clinical Session"><i class="fas fa-microscope"></i> Session</button>` : ''}
                     <button class="btn btn-sm btn-secondary edit-appt" data-id="${a.id}"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-sm btn-danger cancel-appt" data-id="${a.id}" ${a.status==='cancelled'?'disabled':''}><i class="fas fa-times"></i></button>
                   </div>
                 </td>
-              </tr>`).join('')}
+              </tr>`;
+              }).join('')}
             </tbody>
           </table>
         </div>

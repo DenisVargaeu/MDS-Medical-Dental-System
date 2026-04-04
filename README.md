@@ -1,81 +1,45 @@
-# MDS - Medical Dental System (v1.1.0-beta)
+# MDS — Medical Dental System [v1.1.0-beta]
 
-![MDS Logo](frontend/renderer/assets/icons/icon.png)
+MDS is a professional-grade, high-performance management platform for modern dental clinics. Built with a focus on UI/UX excellence, clinic efficiency, and clinical accuracy.
 
-A professional-grade, high-performance Clinic Management System built with Electron, Node.js, and MySQL. Designed for modern dental practices to streamline scheduling, patient records, and clinical workflows with a premium glassmorphic aesthetic.
-
----
+![MDS Dashboard Placeholder](https://via.placeholder.com/1200x600/0A1628/ffffff?text=MDS+v1.1.0+-+Modern+Dental+System)
 
 ## 🚀 Key Features
 
-*   **📅 Advanced Scheduling**: Drag-and-drop style appointment management with automated procedure duration and role-based views.
-*   **🦷 Interactive Odontogram**: Real-time dental charting with state preservation, visual indicators, and history tracking.
-*   **🩺 Clinical Workbench**: Specialized "Doctor's Workbench" for live treatment logging, medical records, and procedure pickers.
-*   **📁 Unified Patient Records**: 360-degree view of medical history, allergies, medications, and diagnoses.
-*   **🔗 Secure Device Pairing**: Connect tablets or remote devices securely using a 7-day pairing code and auto-detected IP/Hostname.
-*   **💰 Automated Billing**: Intelligent invoice generation triggered automatically upon clinical session completion.
-*   **🔒 Enterprise Security**: Role-based access control (Admin, Doctor, Receptionist) with secure JWT-based authentication.
-*   **🛡️ Audit & logs**: Comprehensive tracking of all clinical and administrative actions for regulatory compliance.
+- **Advanced Appointment Calendar**: Professional weekly CSS Grid calendar with 8:00–20:00 time-slot management and status tracking.
+- **Bento-style Dashboard**: High-end data visualization, revenue sparklines, and personalized clinician greetings.
+- **Odontogram (Dental Chart)**: Interactive dental chart with visual status indicators, clinical notes, and pulse animations for critical conditions.
+- **Financial Analytics**: Real-time revenue mix tracking and patient demographic reports with SVG data visualization.
+- **Patient Management**: Comprehensive medical profiles, priority alerts, and treatment history tracking.
+- **Secure Architecture**: JWT-based authentication and secure role-based access control.
 
-## 🛠️ Technology Stack
+## 🛠️ Tech Stack
 
-- **Desktop Framework**: Electron (Cross-platform)
-- **Backend API**: Node.js & Express.js
-- **Database**: MySQL (Clinical-ready schema)
-- **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3 (Custom Glassmorphism)
-- **Icons**: Font Awesome 6 Pro styling
-- **Packaging**: Electron-builder ready
+- **Frontend**: Vanilla JavaScript (ES6+), CSS3 (Bento Design/Grid), HTML5.
+- **Backend**: Node.js, Express, MySQL.
+- **Desktop**: Electron (Native Experience).
 
-## 📦 Quick Start
+## 📦 Installation
 
-### 1. Prerequisites
-- Node.js (v18.0 or later)
-- MySQL Server (running and accessible)
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/DenisVargaeu/MDS-Medical-Dental-System.git
+   ```
+2. **Setup Backend**:
+   - Navigate to `/backend`
+   - Run `npm install`
+   - Configure `.env` (Database credentials)
+   - Run `npm run dev`
+3. **Setup Frontend**:
+   - Navigate to `/frontend`
+   - Run `npm install` (if applicable for Electron/Dependencies)
+   - Launch via Electron or development server.
 
-### 2. Initial Setup
-Run the setup utility to initialize dependencies and configure the environment:
-```bash
-./setup.sh  # (If available) or follow manual steps below
-```
-
-#### Manual Database Initialization
-Create a database (default: `db215343xdenis`) and run the schema:
-```bash
-mysql -u [user] -p [dbname] < backend/schema.sql
-```
-
-#### Environment Configuration
-Configure `backend/.env`:
-```env
-DB_HOST=sql20.dnsserver.eu
-DB_USER=your_user
-DB_PASS=your_password
-DB_NAME=your_db
-JWT_SECRET=your_secret_key
-PORT=3000
-```
-
-### 3. Installation
-Install dependencies for both components:
-```bash
-# From root directory
-cd backend && npm install
-cd ../frontend && npm install
-```
-
-### 4. Running the Application
-The simplest way to start both the API and the Desktop App is using the unified startup script:
-```bash
-# From root directory
-./start.sh
-```
-*Note: Make sure the script is executable (`chmod +x start.sh`).*
-
-## 📱 Device Pairing
-For security, every client device must pair with the server:
-1.  **Start the Backend**: The console will display your **IP**, **Hostname**, and a **6-digit Pairing Code**.
-2.  **Enter Pairing Info**: On first launch, the App will prompt for the Server Address and Pairing Code.
-3.  **Expiry**: Pairing codes are valid for **7 days** for enhanced security.
+## 📈 Recent Updates (v1.1.0-beta)
+- **PIVOT**: Replaced experimental Prescription/Lab modules with a robust weekly appointment calendar.
+- **UI REFINEMENT**: Implemented a "premium" bento-grid layout for the dashboard.
+- **POLISH**: Added micro-animations and improved visual feedback for the dental chart.
+- **ANALYTICS**: Added SVG-based reports for clinic performance.
 
 ## 📁 Project Structure
 ```text

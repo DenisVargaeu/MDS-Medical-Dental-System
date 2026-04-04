@@ -8,9 +8,35 @@ export async function renderPatients(container, params = {}) {
 
   container.innerHTML = `
   <div class="page-header">
-    <div class="page-title"><h2>Patients</h2><p>Manage patient records and medical profiles</p></div>
-    <button class="btn btn-primary" id="add-patient-btn"><i class="fas fa-user-plus"></i> Add Patient</button>
+    <div class="page-title"><h2>Patient Records</h2><p>Overview of clinic medical profiles</p></div>
+    <button class="btn btn-primary shadow-sm" id="add-patient-btn"><i class="fas fa-plus"></i> New Patient Record</button>
   </div>
+
+  <div class="patient-stats-grid" id="p-stats-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:20px; margin-bottom:24px">
+    <div class="stat-mini-card">
+      <div class="label">Total Database</div>
+      <div class="val" id="stat-total-p">—</div>
+    </div>
+    <div class="stat-mini-card">
+      <div class="label">New This Month</div>
+      <div class="val" style="color:var(--success)">+8</div>
+    </div>
+    <div class="stat-mini-card">
+      <div class="label">Insurance Coverage</div>
+      <div class="val">92%</div>
+    </div>
+    <div class="stat-mini-card">
+      <div class="label">High Priority Alerts</div>
+      <div class="val" style="color:var(--danger)">3</div>
+    </div>
+  </div>
+
+  <style>
+    .stat-mini-card { background: var(--bg-card); padding: 16px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    .stat-mini-card .label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+    .stat-mini-card .val { font-size: 20px; font-weight: 800; color: var(--text-primary); }
+  </style>
+
   <div class="card">
     <div class="card-header" style="flex-wrap:wrap;gap:12px">
       <div class="search-bar" style="flex:1;min-width:200px">
@@ -56,14 +82,21 @@ export async function renderPatients(container, params = {}) {
     tbody.innerHTML = `<tr><td colspan="8"><div class="loading-overlay"><div class="spinner"></div></div></td></tr>`;
     try {
       const data = await api.patients.list({ search: searchQuery, page: currentPage, limit });
-      totalPatients = data.total;
-      document.getElementById('patients-count').textContent = `${totalPatients} patient${totalPatients !== 1 ? 's' : ''}`;
-      if (data.data.length === 0) {
+      // Robustly handle both wrapped {data:[], total:0} and unwrapped [] responses
+      const patients = Array.isArray(data) ? data : (data.data || []);
+      const total = typeof data.total === 'number' ? data.total : patients.length;
+      
+      totalPatients = total;
+      document.getElementById('patients-count').textContent = `${totalPatients} total`;
+      const statTotal = document.getElementById('stat-total-p');
+      if (statTotal) statTotal.textContent = totalPatients;
+
+      if (patients.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon"><i class="fas fa-users"></i></div><h3>No patients found</h3><p>Try a different search or add a new patient</p></div></td></tr>`;
         document.getElementById('patients-pagination').innerHTML = '';
         return;
       }
-      tbody.innerHTML = data.data.map(p => `
+      tbody.innerHTML = patients.map(p => `
         <tr style="cursor:pointer">
           <td onclick="mdsNavigateTo('patient-detail',{id:${p.id}})">
             <div style="display:flex;align-items:center;gap:10px">

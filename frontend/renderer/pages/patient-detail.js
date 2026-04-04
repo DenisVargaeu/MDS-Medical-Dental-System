@@ -4,8 +4,21 @@ import { renderOdontogram } from './odontogram.js';
 export async function renderPatientDetail(container, { id }) {
   if (!id) { container.innerHTML = `<div class="empty-state"><h3>No patient selected</h3></div>`; return; }
   try {
-    const { patient, allergies, medications, diagnoses, appointments, records, files, invoices } = await api.patients.get(id);
-    const user = window.mdsCurrentUser();
+    const {
+      patient = {},
+      allergies = [],
+      medications = [],
+      diagnoses = [],
+      appointments = [],
+      records = [],
+      files = [],
+      invoices = [],
+      prescriptions = [],
+      labWork = [],
+      treatmentPlans = []
+    } = await api.patients.get(id);
+
+    const user = window.mdsCurrentUser() || {};
     const isDoctor = user.role === 'doctor' || user.role === 'admin';
 
     const severityColor = { mild:'badge-warning', moderate:'badge-warning', severe:'badge-danger', unknown:'badge-muted' };
@@ -17,8 +30,8 @@ export async function renderPatientDetail(container, { id }) {
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <button class="btn btn-ghost" onclick="mdsNavigateTo('patients')"><i class="fas fa-arrow-left"></i> Back</button>
       <div style="flex:1">
-        <h2 style="font-size:22px;font-weight:700">${patient.first_name} ${patient.last_name}</h2>
-        <p style="font-size:13px;color:var(--text-muted)">Patient ID: #${patient.id} · Registered: ${new Date(patient.created_at).toLocaleDateString('sk-SK')}</p>
+        <h2 style="font-size:22px;font-weight:700">${patient.first_name || 'Patient'} ${patient.last_name || ''}</h2>
+        <p style="font-size:13px;color:var(--text-muted)">Patient ID: #${patient.id || id} · Registered: ${patient.created_at ? new Date(patient.created_at).toLocaleDateString('sk-SK') : '—'}</p>
       </div>
       ${patient.warning_flags ? `<div class="alert alert-danger" style="margin:0;padding:8px 14px"><span><i class="fas fa-exclamation-triangle"></i> ${patient.warning_flags}</span></div>` : ''}
       <button class="btn btn-secondary" id="edit-patient-quick"><i class="fas fa-edit"></i> Edit</button>
@@ -29,11 +42,11 @@ export async function renderPatientDetail(container, { id }) {
     <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;margin-bottom:20px">
       <div class="card" style="padding:0">
         <div style="padding:24px;text-align:center;border-bottom:1px solid var(--border)">
-          <div class="avatar avatar-lg" style="margin:0 auto 12px">${patient.first_name[0]}${patient.last_name[0]}</div>
-          <div style="font-size:17px;font-weight:700">${patient.first_name} ${patient.last_name}</div>
+          <div class="avatar avatar-lg" style="margin:0 auto 12px">${(patient.first_name || 'P')[0]}${(patient.last_name || '')[0] || ''}</div>
+          <div style="font-size:17px;font-weight:700">${patient.first_name || ''} ${patient.last_name || ''}</div>
           <div style="font-size:13px;color:var(--text-muted);margin-top:2px">${patient.age ? patient.age + ' years old' : ''} · ${patient.gender || ''}</div>
           <div style="margin-top:10px">
-            <span class="badge badge-primary">${patient.blood_type}</span>
+            <span class="badge badge-primary">${patient.blood_type || 'unknown'}</span>
           </div>
         </div>
         <div style="padding:16px">
@@ -48,8 +61,8 @@ export async function renderPatientDetail(container, { id }) {
       <!-- Tabs (main content) -->
       <div class="card">
         <div class="tabs" style="padding:0 16px">
-          ${['Medical','Dental Chart','History','Attachments','Invoices'].map((t,i) =>
-            `<button class="tab-btn ${i===0?'active':''}" data-tab="tab-${t.toLowerCase().replace(' ','-')}">${t}</button>`
+          ${['Medical','Dental Chart','History','Attachments','Invoices','Prescriptions','Lab Work','Treatment Plans'].map((t,i) =>
+            `<button class="tab-btn ${i===0?'active':''}" data-tab="tab-${t.toLowerCase().replace(/ /g,'-')}">${t}</button>`
           ).join('')}
         </div>
         <div style="padding:16px">
@@ -168,6 +181,52 @@ export async function renderPatientDetail(container, { id }) {
                 <td><span class="badge ${invStatus[inv.status]||'badge-muted'}">${inv.status}</span></td>
               </tr>`).join('')}
             </tbody></table>`}
+          </div>
+
+          <!-- PRESCRIPTIONS TAB -->
+          <div class="tab-content" id="tab-prescriptions">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <h4 style="font-size:13px;font-weight:700"><i class="fas fa-pills"></i> Prescriptions</h4>
+              <button class="btn btn-sm btn-primary" onclick="mdsNavigateTo('prescriptions',{patientId:${patient.id}})">Full History</button>
+            </div>
+            ${prescriptions.length === 0 ? '<div class="empty-state" style="padding:30px"><div class="empty-state-icon"><i class="fas fa-prescription"></i></div><h3>No prescriptions</h3></div>' :
+            `<table><thead><tr><th>Date</th><th>Medications</th><th>Status</th></tr></thead>
+            <tbody>${prescriptions.map(p => `<tr>
+              <td>${new Date(p.date).toLocaleDateString('sk-SK')}</td>
+              <td><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.medications}</div></td>
+              <td><span class="badge badge-${p.status === 'active' ? 'success' : 'muted'}">${p.status}</span></td>
+            </tr>`).join('')}</tbody></table>`}
+          </div>
+
+          <!-- LAB WORK TAB -->
+          <div class="tab-content" id="tab-lab-work">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <h4 style="font-size:13px;font-weight:700"><i class="fas fa-microscope"></i> Lab Orders</h4>
+              <button class="btn btn-sm btn-primary" onclick="mdsNavigateTo('lab-work',{patientId:${patient.id}})">Full History</button>
+            </div>
+            ${labWork.length === 0 ? '<div class="empty-state" style="padding:30px"><div class="empty-state-icon"><i class="fas fa-microscope"></i></div><h3>No lab orders</h3></div>' :
+            `<table><thead><tr><th>Order Date</th><th>Lab Name</th><th>Work Type</th><th>Status</th></tr></thead>
+            <tbody>${labWork.map(l => `<tr>
+              <td>${new Date(l.order_date).toLocaleDateString('sk-SK')}</td>
+              <td>${l.lab_name}</td>
+              <td>${l.work_type}</td>
+              <td><span class="badge badge-${l.status === 'received' ? 'success' : 'primary'}">${l.status}</span></td>
+            </tr>`).join('')}</tbody></table>`}
+          </div>
+
+          <!-- TREATMENT PLANS TAB -->
+          <div class="tab-content" id="tab-treatment-plans">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <h4 style="font-size:13px;font-weight:700"><i class="fas fa-project-diagram"></i> Treatment Plans</h4>
+              <button class="btn btn-sm btn-primary" onclick="mdsNavigateTo('treatment-plans',{patientId:${patient.id}})">Manage Plans</button>
+            </div>
+            ${treatmentPlans.length === 0 ? '<div class="empty-state" style="padding:30px"><div class="empty-state-icon"><i class="fas fa-project-diagram"></i></div><h3>No treatment plans</h3></div>' :
+            `<table><thead><tr><th>Title</th><th>Created</th><th>Status</th></tr></thead>
+            <tbody>${treatmentPlans.map(tp => `<tr>
+              <td><strong>${tp.title}</strong></td>
+              <td>${new Date(tp.created_at).toLocaleDateString('sk-SK')}</td>
+              <td><span class="badge badge-${tp.status === 'active' ? 'primary' : 'muted'}">${tp.status}</span></td>
+            </tr>`).join('')}</tbody></table>`}
           </div>
         </div>
       </div>

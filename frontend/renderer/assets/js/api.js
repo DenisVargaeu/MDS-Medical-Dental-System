@@ -35,6 +35,13 @@ export function clearToken() {
   sessionStorage.removeItem('mds_user');
 }
 
+export function disconnect() {
+  clearToken();
+  localStorage.removeItem('mds_server_url');
+  localStorage.removeItem('mds_is_paired');
+  localStorage.removeItem('mds_pairing_code');
+}
+
 async function request(method, path, body = null, isFormData = false) {
   const token = getToken();
   const headers = {};
@@ -77,6 +84,7 @@ export const auth = {
   login: (email, password) => request('POST', '/auth/login', { email, password }),
   me: () => request('GET', '/auth/me'),
   changePassword: (currentPassword, newPassword) => request('POST', '/auth/change-password', { currentPassword, newPassword }),
+  checkPairingStatus: (code) => request('GET', `/auth/pairing-status/${code}`),
 };
 
 // ── Patients ────────────────────────────────────────────────────
@@ -177,4 +185,13 @@ export const inventory = {
 // ── Logs ──────────────────────────────────────────────────────────
 export const logs = {
   list: () => request('GET', '/logs'),
+};
+
+// ── Prescriptions ─────────────────────────────────────────────────
+export const treatmentPlans = {
+  list: (params = {}) => request('GET', `/treatment-plans?${new URLSearchParams(params)}`),
+  get: (id) => request('GET', `/treatment-plans/${id}`),
+  create: (data) => request('POST', '/treatment-plans', data),
+  updateStatus: (id, status) => request('PATCH', `/treatment-plans/${id}/status`, { status }),
+  updateItemStatus: (id, itemId, status) => request('PATCH', `/treatment-plans/${id}/items/${itemId}/status`, { status }),
 };

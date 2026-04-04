@@ -68,8 +68,10 @@ router.get('/:id', auth, async (req, res) => {
     const [invoices] = await db.query(
       `SELECT * FROM mds_invoices WHERE patient_id = ? ORDER BY issue_date DESC LIMIT 10`, [req.params.id]
     );
-
-    res.json({ patient, allergies, medications, diagnoses, appointments, records, files, invoices });
+    const [treatmentPlans] = await db.query(
+      `SELECT * FROM mds_treatment_plans WHERE patient_id = ? ORDER BY created_at DESC LIMIT 10`, [req.params.id]
+    );
+    res.json({ patient, allergies, medications, diagnoses, appointments, records, files, invoices, treatmentPlans });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

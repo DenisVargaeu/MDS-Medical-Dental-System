@@ -35,8 +35,10 @@ export async function renderRecords(container, params = {}) {
     const rc = document.getElementById('records-container');
     rc.innerHTML = `<div class="loading-overlay"><div class="spinner"></div></div>`;
     try {
-      const data = await api.records.list({ patient_id: patientId });
-      const recs = data.data;
+      const resp = await api.records.list({ patient_id: patientId });
+      // Support both wrapped {data:[]} and direct [] responses
+      const recs = Array.isArray(resp) ? resp : (resp.data || []);
+      
       if (recs.length === 0) {
         rc.innerHTML = `<div class="card"><div class="empty-state"><div class="empty-state-icon"><i class="fas fa-file-prescription"></i></div><h3>No records found</h3><p>Create the first medical record for this patient</p></div></div>`;
         return;

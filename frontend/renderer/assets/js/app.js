@@ -20,11 +20,16 @@ import { renderReports } from '../../pages/reports.js';
 import { renderClinicalSession } from '../../pages/clinical-session.js';
 import { renderSystem } from '../../pages/system.js';
 import { renderPairing } from '../../pages/pairing.js';
+import { renderTreatmentPlans } from '../../pages/treatment-plans.js';
 
 // ── State ─────────────────────────────────────────────────────────
 let currentPage = 'dashboard';
 let currentUser = null;
 let unreadCount = 0;
+let pairingCheckInterval = null;
+let expirationTimer = null;
+let isInitialized = false;
+let notifInterval = null;
 
 const pageMap = {
   dashboard:      { render: renderDashboard,      label: 'Dashboard' },
@@ -41,6 +46,7 @@ const pageMap = {
   'clinical-session': { render: renderClinicalSession, label: 'Clinical Session' },
   system:         { render: renderSystem,          label: 'System Info' },
   settings:       { render: renderSettings,        label: 'Settings' },
+  'treatment-plans': { render: renderTreatmentPlans, label: 'Treatment Plans' },
 };
 
 // ── Toast System ──────────────────────────────────────────────────
@@ -61,6 +67,11 @@ export function toast(message, type = 'info', duration = 3500) {
 
 // ── Navigation ────────────────────────────────────────────────────
 export function navigateTo(page, params = {}) {
+  // Prevent redundant navigation to the same page with same params (simple check)
+  if (currentPage === page && Object.keys(params).length === 0 && document.getElementById('main-content').innerHTML !== '') {
+    return;
+  }
+
   const entry = pageMap[page];
   if (!entry) return;
 
@@ -131,6 +142,45 @@ async function refreshNotifBadge() {
   } catch (_) {}
 }
 
+// ── Pairing Expiration Check ──────────────────────────────────────
+function startPairingCheck() {
+  if (pairingCheckInterval) return;
+
+  pairingCheckInterval = setInterval(async () => {
+    const isPaired = localStorage.getItem('mds_is_paired') === 'true';
+    const code = localStorage.getItem('mds_pairing_code');
+    
+    if (!isPaired || !code) return;
+
+    try {
+      const res = await api.auth.checkPairingStatus(code);
+      if (!res.valid) {
+        handlePairingExpiration();
+      }
+    } catch (err) {
+      // If server is unreachable, we don't necessarily want to kick them out yet
+      console.warn('[Pairing Check] Server unreachable');
+    }
+  }, 30000); // Check every 30 seconds
+}
+
+function handlePairingExpiration() {
+  if (expirationTimer) return; // Already handles
+
+  clearInterval(pairingCheckInterval);
+  pairingCheckInterval = null;
+
+  toast('Pairing PIN has changed or expired! You will be disconnected in 60 minutes.', 'warning', 10000);
+  
+  // Start 60 minute countdown
+  expirationTimer = setTimeout(() => {
+    toast('Pairing expired. Disconnecting now...', 'danger', 5000);
+    setTimeout(() => {
+      window.mdsDisconnect();
+    }, 2000);
+  }, 3600000); // 60 minutes
+}
+
 // ── Boot ──────────────────────────────────────────────────────────
 async function boot() {
   // Check if device is paired
@@ -147,6 +197,7 @@ async function boot() {
     try {
       currentUser = JSON.parse(savedUser);
       showApp();
+      startPairingCheck(); // Start check if already app shown
       return;
     } catch (_) {}
   }
@@ -186,18 +237,25 @@ function showApp() {
   document.getElementById('sidebar-user-role').textContent = currentUser.role;
   document.getElementById('sidebar-avatar').textContent = (currentUser.name[0] + currentUser.surname[0]).toUpperCase();
 
-  initSidebar();
-  initSearch();
+  if (!isInitialized) {
+    initSidebar();
+    initSearch();
+    
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        if (notifInterval) {
+          clearInterval(notifInterval);
+          notifInterval = null;
+        }
+        api.clearToken();
+        sessionStorage.removeItem('mds_user');
+        showLogin();
+      }
+    });
 
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    if (confirm('Are you sure you want to logout?')) {
-      api.clearToken();
-      sessionStorage.removeItem('mds_user');
-      showLogin();
-    }
-  });
-
-  document.getElementById('notif-btn').addEventListener('click', () => navigateTo('notifications'));
+    document.getElementById('notif-btn').addEventListener('click', () => navigateTo('notifications'));
+    isInitialized = true;
+  }
 
   // Role-based nav hiding
   if (currentUser.role === 'receptionist') {
@@ -215,7 +273,11 @@ function showApp() {
 
   navigateTo('dashboard');
   refreshNotifBadge();
-  setInterval(refreshNotifBadge, 60000); // refresh every minute
+  startPairingCheck();
+  
+  if (!notifInterval) {
+    notifInterval = setInterval(refreshNotifBadge, 60000); // refresh every minute
+  }
 }
 
 // Handle session expiry
@@ -228,5 +290,11 @@ window.addEventListener('auth:expired', () => {
 window.mdsNavigateTo = navigateTo;
 window.mdsToast = toast;
 window.mdsCurrentUser = () => currentUser;
+
+window.mdsDisconnect = () => {
+  api.disconnect();
+  currentUser = null;
+  showPairing();
+};
 
 boot();
