@@ -219,3 +219,22 @@ export const prescriptions = {
   create: (data) => request('POST', '/prescriptions', data),
   delete: (id) => request('DELETE', `/prescriptions/${id}`)
 };
+
+export const sterilization = {
+  list: () => request('GET', '/sterilization'),
+  create: (data) => request('POST', '/sterilization', data),
+  delete: (id) => request('DELETE', `/sterilization/${id}`)
+};
+
+export const suppliers = {
+  list: (q = '') => request('GET', `/suppliers?q=${q}`),
+  get: (id) => request('GET', `/suppliers/${id}`),
+  create: (data) => request('POST', '/suppliers', data),
+  update: (id, data) => request('PATCH', `/suppliers/${id}`, data),
+  delete: (id) => request('DELETE', `/suppliers/${id}`)
+};
+
+export const staff = {
+  list: () => request('GET', '/users'),
+  getStats: (id) => request('GET', `/users/${id}/stats`)
+};

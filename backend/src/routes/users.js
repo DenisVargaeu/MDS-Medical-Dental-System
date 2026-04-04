@@ -83,4 +83,22 @@ router.put('/:id/reset-password', auth, roles('admin'), async (req, res) => {
   }
 });
 
+// GET /api/users/:id/stats - Performance metrics
+router.get('/:id/stats', auth, roles('admin'), async (req, res) => {
+  try {
+    const [[stats]] = await db.query(
+      `SELECT 
+         (SELECT COUNT(*) FROM mds_appointments WHERE doctor_id = u.id) AS total_appointments,
+         (SELECT COUNT(*) FROM mds_medical_records WHERE doctor_id = u.id) AS total_records,
+         (SELECT COALESCE(SUM(total), 0) FROM mds_invoices WHERE created_by = u.id) AS total_revenue
+       FROM mds_users u WHERE u.id = ?`,
+      [req.params.id]
+    );
+    res.json(stats || { total_appointments: 0, total_records: 0, total_revenue: 0 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

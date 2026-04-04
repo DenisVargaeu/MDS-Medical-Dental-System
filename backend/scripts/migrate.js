@@ -75,8 +75,32 @@ async function migrate() {
       `INSERT IGNORE INTO mds_settings (setting_key, setting_value) VALUES 
        ('invoice_template', '["header", "clinic_info", "patient_info", "treatment_table", "totals", "footer"]');`,
 
-      `ALTER TABLE mds_patient_treatments ADD COLUMN IF NOT EXISTS invoice_id INT NULL;`,
-      `ALTER TABLE mds_patient_treatments ADD CONSTRAINT fk_treatment_invoice FOREIGN KEY (invoice_id) REFERENCES mds_invoices(id) ON DELETE SET NULL;`
+      `CREATE TABLE IF NOT EXISTS mds_sterilization (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        doctor_id INT NOT NULL,
+        cycle_number VARCHAR(50) NOT NULL,
+        equipment_id VARCHAR(50),
+        temperature DECIMAL(5,2),
+        pressure DECIMAL(5,2),
+        duration_minutes INT,
+        status ENUM('passed', 'failed', 'process') DEFAULT 'passed',
+        notes TEXT,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (doctor_id) REFERENCES mds_users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB;`,
+
+      `CREATE TABLE IF NOT EXISTS mds_suppliers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(200) NOT NULL,
+        contact_person VARCHAR(100),
+        phone VARCHAR(50),
+        email VARCHAR(100),
+        address TEXT,
+        website VARCHAR(255),
+        category VARCHAR(100),
+        notes TEXT,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB;`
     ];
 
     for (let i = 0; i < queries.length; i++) {

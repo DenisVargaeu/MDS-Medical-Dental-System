@@ -24,6 +24,10 @@ import { renderTreatmentPlans } from '../../pages/treatment-plans.js';
 import { renderLabWork } from '../../pages/lab-work.js';
 import { renderPrescriptions } from '../../pages/prescriptions.js';
 import { renderRecall } from '../../pages/recall.js';
+import { renderStaff } from '../../pages/staff.js';
+import { renderDocuments } from '../../pages/documents.js';
+import { renderSterilization } from '../../pages/sterilization.js';
+import { renderSuppliers } from '../../pages/suppliers.js';
 
 // ── State ─────────────────────────────────────────────────────────
 let currentPage = 'dashboard';
@@ -53,6 +57,10 @@ const pageMap = {
   'lab-work':      { render: renderLabWork,        label: 'Laboratory Work' },
   'prescriptions': { render: renderPrescriptions,   label: 'Prescriptions' },
   'recall':        { render: renderRecall,          label: 'Recall Manager' },
+  'staff':         { render: renderStaff,           label: 'Staff Management' },
+  'documents':     { render: renderDocuments,       label: 'Document Gallery' },
+  'sterilization': { render: renderSterilization,   label: 'Hygiene & Sterilization' },
+  'suppliers':     { render: renderSuppliers,       label: 'Suppliers' },
 };
 
 // ── Toast System ──────────────────────────────────────────────────
