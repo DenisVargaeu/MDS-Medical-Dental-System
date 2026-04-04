@@ -203,72 +203,85 @@ export async function renderTreatmentPlans(container, params = {}) {
             </div>
             <div class="modal-close" onclick="this.closest('.modal-backdrop').remove()"><i class="fas fa-times"></i></div>
           </div>
-          <div class="modal-body bg-light" style="padding:0">
-            <div class="grid grid-12" style="height:100%">
+          <div class="modal-body" style="padding:0">
+            <div class="tp-layout">
               <!-- Left Sidebar: Info & Stats -->
-              <div class="col-span-4 border-right" style="padding:24px; background:#fff">
+              <div class="tp-sidebar">
                 <div class="patient-snippet mb-24">
-                  <h5 class="form-label" style="margin-bottom:12px">Patient Information</h5>
+                  <label class="tp-stat-label">Patient Information</label>
                   <div class="flex items-center gap-12">
                     <div class="avatar avatar-lg">${plan.patient_first_name[0]}${plan.patient_last_name[0]}</div>
                     <div>
                       <div style="font-weight:700;font-size:16px">${plan.patient_first_name} ${plan.patient_last_name}</div>
-                      <div style="font-size:12px;color:var(--text-muted)">Created by Dr. ${plan.doctor_surname}</div>
+                      <div style="font-size:12px;color:var(--text-muted)">Dr. ${plan.doctor_surname}</div>
                     </div>
                   </div>
                 </div>
 
-                <div class="progression-box mb-24">
+                <div class="tp-progress-container">
                   <div class="flex justify-between mb-8">
-                    <span style="font-size:12px;font-weight:700">PLAN PROGRESS</span>
+                    <span class="tp-stat-label">Completion</span>
                     <span style="font-size:12px;font-weight:800">${progress}%</span>
                   </div>
-                  <div style="height:12px;background:var(--bg-app);border-radius:6px;overflow:hidden">
-                    <div style="height:100%;width:${progress}%;background:var(--success);transition:width 0.4s ease"></div>
+                  <div class="tp-progress-track">
+                    <div class="tp-progress-fill" style="width:${progress}%"></div>
                   </div>
                 </div>
 
-                <div class="financials card-body border rounded-lg" style="background:var(--bg-app)">
+                <div class="tp-stat-widget">
+                  <div class="tp-stat-label">Financial Overview</div>
                   <div class="flex justify-between mb-12">
                     <span style="font-size:13px;color:var(--text-secondary)">Total Estimate</span>
-                    <span style="font-weight:700">€${totalCost.toFixed(2)}</span>
+                    <span class="tp-stat-value">€${totalCost.toFixed(2)}</span>
                   </div>
                   <div class="flex justify-between">
                     <span style="font-size:13px;color:var(--text-secondary)">Remaining</span>
-                    <span style="font-weight:700;color:var(--primary)">€${remainingCost.toFixed(2)}</span>
+                    <span class="tp-stat-value" style="color:var(--primary)">€${remainingCost.toFixed(2)}</span>
                   </div>
                 </div>
 
-                ${plan.description ? `<div class="mt-24"><label class="form-label">Clinical Notes</label><p style="font-size:13px; line-height:1.5">${plan.description}</p></div>` : ''}
+                ${plan.description ? `
+                  <div class="mt-24">
+                    <label class="tp-stat-label">Plan Description</label>
+                    <p style="font-size:13px; line-height:1.6; color:var(--text-secondary)">${plan.description}</p>
+                  </div>
+                ` : ''}
+                
+                <div style="flex:1"></div>
+                
+                <div class="alert alert-info" style="margin-top:24px">
+                  <i class="fas fa-info-circle alert-icon"></i>
+                  <div>Statuses update real-time revenue projections.</div>
+                </div>
               </div>
 
               <!-- Right: Detailed Phases -->
-              <div class="col-span-8" style="padding:24px; overflow-y:auto; height:calc(90vh - 120px)">
+              <div class="tp-content">
                 ${Object.keys(phases).sort().map(phaseNum => `
                   <div class="phase-section mb-32">
-                    <div class="phase-header flex items-center gap-12 mb-16">
-                      <div style="background:var(--primary); color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px">P${phaseNum}</div>
-                      <h4 style="font-size:14px; font-weight:700">PHASE ${phaseNum}</h4>
+                    <div class="flex items-center gap-12 mb-24">
+                      <div class="tp-phase-badge">${phaseNum}</div>
+                      <h4 class="tp-phase-title">PHASE ${phaseNum}</h4>
                       <div style="flex:1; height:1px; background:var(--border)"></div>
                     </div>
-                    <div class="phase-grid" style="display:flex; flex-direction:column; gap:12px">
+                    <div class="flex flex-col gap-12">
                       ${phases[phaseNum].map(item => `
-                        <div class="card p-16 flex items-center justify-between transition" style="border-left: 4px solid ${item.status==='completed'?'var(--success)':item.status==='skipped'?'var(--text-muted)':'var(--primary)'}">
+                        <div class="tp-item-card ${item.status}">
                           <div style="flex:1">
-                            <div style="font-weight:700">${item.treatment_name}</div>
-                            <div style="font-size:11px; color:var(--text-muted)">
-                              ${item.tooth_number ? `Tooth: <strong>${item.tooth_number}</strong>` : 'General area'} 
-                              ${item.notes ? `| ${item.notes}` : ''}
+                            <div style="font-weight:700; color:var(--text-primary); font-size:14px; margin-bottom:4px">${item.treatment_name}</div>
+                            <div style="font-size:11px; color:var(--text-muted); display:flex; gap:16px">
+                              <span><i class="fas fa-tooth" style="margin-right:4px"></i> ${item.tooth_number ? `Tooth ${item.tooth_number}` : 'General'}</span>
+                              ${item.notes ? `<span><i class="fas fa-sticky-note" style="margin-right:4px"></i> ${item.notes}</span>` : ''}
                             </div>
                           </div>
                           <div class="flex items-center gap-12">
-                            <div style="font-size:12px; font-weight:800; color:var(--primary); margin-right:12px">€${parseFloat(item.treatment_price).toFixed(2)}</div>
+                            <div style="font-size:13px; font-weight:800; color:var(--text-primary); margin-right:16px">€${parseFloat(item.treatment_price).toFixed(2)}</div>
                             <span class="badge badge-${item.status==='completed'?'success':item.status==='skipped'?'muted':'warning'}">${item.status}</span>
                             ${isManagement && plan.status === 'active' ? `
-                              <div class="flex gap-4">
-                                <button class="btn btn-icon btn-secondary update-item-status" data-id="${item.id}" data-status="completed" title="Complete"><i class="fas fa-check text-success"></i></button>
-                                <button class="btn btn-icon btn-secondary update-item-status" data-id="${item.id}" data-status="skipped" title="Skip"><i class="fas fa-times text-muted"></i></button>
-                                <button class="btn btn-icon btn-secondary update-item-status" data-id="${item.id}" data-status="pending" title="Reset"><i class="fas fa-undo"></i></button>
+                              <div class="flex gap-4 ml-8">
+                                <button class="tp-action-btn success update-item-status" data-id="${item.id}" data-status="completed" title="Complete"><i class="fas fa-check"></i></button>
+                                <button class="tp-action-btn update-item-status" data-id="${item.id}" data-status="skipped" title="Skip"><i class="fas fa-times"></i></button>
+                                <button class="tp-action-btn update-item-status" data-id="${item.id}" data-status="pending" title="Reset"><i class="fas fa-undo"></i></button>
                               </div>
                             ` : ''}
                           </div>
@@ -323,7 +336,6 @@ export async function renderTreatmentPlans(container, params = {}) {
         } catch (err) { window.mdsToast(err.message, 'error'); }
       });
     }
-
   } catch (err) {
     container.innerHTML = `<div class="empty-state"><h3>Error: ${err.message}</h3></div>`;
   }
