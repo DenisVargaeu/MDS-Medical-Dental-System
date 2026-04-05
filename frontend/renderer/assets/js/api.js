@@ -69,6 +69,17 @@ async function request(method, path, body = null, isFormData = false) {
   }
 }
 
+/**
+ * Generic API Client
+ * @param {string} path API Endpoint path (e.g. '/auth/me')
+ * @param {object} options { method: 'GET', body: null, isFormData: false }
+ * @returns {Promise<any>}
+ */
+export async function client(path, options = {}) {
+  const { method = 'GET', body = null, isFormData = false } = options;
+  return request(method, path, body, isFormData);
+}
+
 export const auth = {
   login: (email, password) => request('POST', '/auth/login', { email, password }),
   me: () => request('GET', '/auth/me'),
