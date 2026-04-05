@@ -473,7 +473,7 @@ window.mdsRenderInvoiceModal = async (id) => {
                   <p style="font-size:13px; color:#718096; line-height:1.6">${invoice.notes || 'Please pay by bank transfer or at the reception. Thank you for your visit!'}</p>
                 </div>
                 <div style="text-align:right; font-size:13px; color:#718096">
-                  <div style="margin-top:40px; font-style:italic">Physician\\'s Signature</div>
+                  <div style="margin-top:40px; font-style:italic">Physician's Signature</div>
                   <div style="margin-top:12px; border-top:1px solid #edf2f7; display:inline-block; width:150px"></div>
                 </div>
               </div>`;

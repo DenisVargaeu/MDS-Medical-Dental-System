@@ -13,7 +13,7 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-router.post('/', auth, roles(['admin']), async (req, res) => {
+router.post('/', auth, roles('admin'), async (req, res) => {
   try {
     const id = await Inventory.create(req.body);
     res.status(201).json({ id, ...req.body });
@@ -22,7 +22,7 @@ router.post('/', auth, roles(['admin']), async (req, res) => {
   }
 });
 
-router.put('/:id', auth, roles(['admin']), async (req, res) => {
+router.put('/:id', auth, roles('admin'), async (req, res) => {
   try {
     await Inventory.update(req.params.id, req.body);
     res.json({ message: 'Item updated' });
@@ -40,7 +40,7 @@ router.patch('/:id/stock', auth, async (req, res) => {
   }
 });
 
-router.delete('/:id', auth, roles(['admin']), async (req, res) => {
+router.delete('/:id', auth, roles('admin'), async (req, res) => {
   try {
     await Inventory.delete(req.params.id);
     res.json({ message: 'Item deleted' });

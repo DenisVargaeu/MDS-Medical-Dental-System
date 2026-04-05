@@ -4,7 +4,7 @@ const Log = require('../models/log');
 const auth = require('../middleware/auth');
 const roles = require('../middleware/roles');
 
-router.get('/', auth, roles(['admin']), async (req, res) => {
+router.get('/', auth, roles('admin'), async (req, res) => {
   try {
     const logs = await Log.list(200);
     res.json(logs);
