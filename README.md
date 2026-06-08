@@ -1,6 +1,8 @@
+<div align="center">
+
 # 🏥 MDS - Medical Dental System v2.0.0
 
-> **High-Integrity Clinical Suite for Precision Healthcare**
+## High-Integrity Clinical Suite for Precision Healthcare
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/Version-2.0.0-blueviolet.svg)](package.json)
@@ -10,6 +12,8 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-blue.svg)](https://www.mysql.com/)
 [![Electron](https://img.shields.io/badge/Electron-Desktop%20App-9feaf9.svg)](https://www.electronjs.org/)
 [![Express.js](https://img.shields.io/badge/Express.js-Backend-black.svg)](https://expressjs.com/)
+
+</div>
 
 ---
 
@@ -286,15 +290,11 @@ copies of the Software...
 
 ---
 
+<div align="center">
+
 ## 🙏 Acknowledgments
 
-- Built with ❤️ for the medical and dental community
-- Designed for enterprise healthcare environments
-- Developed with accessibility and compliance in mind
-
----
-
-<div align="center">
+Built with ❤️ for the medical and dental community
 
 **Developed by Denis Vargaeu**
 
